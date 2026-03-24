@@ -15,7 +15,7 @@ interface MarkerConfig {
 
 const MARKERS: MarkerConfig[] = [
   {
-    lat: 0.4531,
+    lat: -0.4531,
     lng: 39.6413,
     name: "Garissa (Upstream)",
     depth: "1.20m",
@@ -84,14 +84,22 @@ export function MapSection() {
       shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
     });
 
+    const kenyaBounds: L.LatLngBoundsExpression = [
+      [-5.0, 33.5],
+      [5.5, 42.5],
+    ];
+
     const map = L.map(mapRef.current, {
-      center: [0.0, 39.9],
+      center: [-0.5, 39.9],
       zoom: 7,
+      minZoom: 6,
+      maxZoom: 9,
+      maxBounds: kenyaBounds,
+      maxBoundsViscosity: 1.0,
       zoomControl: true,
       attributionControl: true,
     });
 
-    // Dark CartoDB tile layer
     L.tileLayer(
       "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
       {
@@ -101,6 +109,8 @@ export function MapSection() {
         maxZoom: 19,
       }
     ).addTo(map);
+
+    map.setMaxBounds(kenyaBounds);
 
     MARKERS.forEach((m) => {
       const icon = L.divIcon({
