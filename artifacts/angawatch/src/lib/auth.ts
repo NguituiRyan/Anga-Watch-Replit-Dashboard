@@ -18,7 +18,12 @@ export async function signUp({ email, password, fullName, organization, phone, r
     email,
     password,
     options: {
-      data: { full_name: fullName, role: safeRole },
+      data: {
+        full_name: fullName,
+        organization: organization ?? "",
+        phone: phone ?? "",
+        role: safeRole,
+      },
     },
   });
   if (error) throw error;
@@ -28,10 +33,17 @@ export async function signUp({ email, password, fullName, organization, phone, r
   }
 
   if (data.user) {
-    await supabase
+    supabase
       .from("profiles")
-      .update({ organization, phone, full_name: fullName })
-      .eq("id", data.user.id);
+      .upsert({
+        id: data.user.id,
+        email,
+        full_name: fullName,
+        organization: organization ?? "",
+        phone: phone ?? "",
+        role: safeRole,
+      })
+      .then(() => {});
   }
   return data;
 }
