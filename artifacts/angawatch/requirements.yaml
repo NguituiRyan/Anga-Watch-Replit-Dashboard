@@ -1,0 +1,11 @@
+packages:
+  "recharts": "Data visualization for predictive engine chart"
+  "date-fns": "Formatting the live ticking clock"
+  "framer-motion": "Animations for the pulse effects and smooth transitions"
+  "clsx": "Utility for conditional class merging"
+  "tailwind-merge": "Utility for Tailwind class merging"
+
+notes:
+  - This is a pure frontend proof-of-concept with simulated static data.
+  - The dashboard is completely dark-themed by default.
+  - Uses Lucide icons and Recharts for data visualization.
