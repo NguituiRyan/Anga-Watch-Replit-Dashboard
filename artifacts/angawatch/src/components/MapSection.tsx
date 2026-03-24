@@ -158,7 +158,7 @@ export function MapSection() {
   }, []);
 
   return (
-    <div className="bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-6">
+    <div className="bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-4 md:p-6 mb-6">
       <div className="mb-5">
         <h3 className="text-lg font-semibold text-slate-200">
           Basin Overview — Sensor Network
@@ -171,7 +171,7 @@ export function MapSection() {
       <div
         ref={mapRef}
         className="w-full rounded-xl overflow-hidden border border-slate-700/50"
-        style={{ height: 420, zIndex: 0 }}
+        style={{ height: "clamp(260px, 50vw, 420px)", zIndex: 0 }}
       />
 
       <div className="flex flex-wrap gap-5 mt-4 text-xs font-mono">

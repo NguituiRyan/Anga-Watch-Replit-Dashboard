@@ -47,7 +47,7 @@ export function PredictiveChart({ node }: PredictiveChartProps) {
   return (
     <div
       ref={ref}
-      className="bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-6"
+      className="bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-4 md:p-6 mb-6"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
@@ -74,7 +74,7 @@ export function PredictiveChart({ node }: PredictiveChartProps) {
         </div>
       </div>
 
-      <div className="h-[320px] w-full">
+      <div className="h-[220px] sm:h-[280px] md:h-[320px] w-full">
         {showLine && (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart

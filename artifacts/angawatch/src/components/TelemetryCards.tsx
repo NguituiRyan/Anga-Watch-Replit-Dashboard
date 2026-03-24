@@ -32,7 +32,7 @@ export function TelemetryCards({ node }: TelemetryCardsProps) {
   const countdown = useCountdown(48);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6">
       {/* Card 1: Water Height */}
       <div className="bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 relative overflow-hidden group hover:bg-slate-800 transition-colors">
         <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all" />
