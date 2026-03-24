@@ -76,6 +76,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.100.0",
     "leaflet": "^1.9.4"
   }
 }

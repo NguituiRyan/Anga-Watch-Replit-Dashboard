@@ -33,7 +33,18 @@ High-fidelity AngaWatch flood prediction dashboard. Dark-mode command center wit
 - WalkthroughTour with scrollIntoView navigation
 - NodeInfoPanel slide-out with hardware specs, GPS, prototype photo
 - Manual alert button: page flash, alert log, toast notification
-- Dependencies: recharts, leaflet, @types/leaflet, framer-motion, date-fns
+- **Authentication**: Supabase Auth (email/password) with role-based access control
+  - Supabase client: `src/lib/supabase.ts` — reads `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`
+  - Auth helpers: `src/lib/auth.ts` — signUp, signIn, signOut (safe role enforcement: only viewer/county_officer from client)
+  - Auth context: `src/hooks/use-auth.tsx` — AuthProvider + useAuth hook (user, profile, role, isAdmin)
+  - Protected route: `src/components/ProtectedRoute.tsx` — wraps Dashboard, redirects to /login if unauthenticated
+  - Login page: `src/pages/Login.tsx` at /login
+  - Register page: `src/pages/Register.tsx` at /register
+  - Roles: admin (full access), viewer (read-only), county_officer (read + CSV)
+  - "Trigger Manual Alert" button: admin-only (greyed out for other roles)
+  - TopNav: shows user name, role badge (color-coded), logout button
+  - Supabase DB: `profiles` table with trigger `on_auth_user_created`, RLS enabled
+- Dependencies: recharts, leaflet, @types/leaflet, framer-motion, date-fns, @supabase/supabase-js
 - Data model: `BasinConfig` holds nodes, markers, inundation zones, mesh nodes, map center/zoom per basin in `use-mock-data.ts`
 
 ## Structure

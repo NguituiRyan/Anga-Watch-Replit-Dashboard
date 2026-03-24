@@ -183,11 +183,13 @@ export function SmsSimulator({
   alertLog,
   activeNode,
   basinName,
+  isAdmin = false,
 }: {
   onAlertTriggered: () => void;
   alertLog: string[];
   activeNode: NodeData;
   basinName: string;
+  isAdmin?: boolean;
 }) {
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -397,16 +399,26 @@ export function SmsSimulator({
             </div>
           </div>
 
-          <button
-            onClick={onAlertTriggered}
-            className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold rounded-xl transition-all flex items-center gap-2 mb-5 text-sm"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-200 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
-            </span>
-            Trigger Manual Alert
-          </button>
+          {isAdmin ? (
+            <button
+              onClick={onAlertTriggered}
+              className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold rounded-xl transition-all flex items-center gap-2 mb-5 text-sm"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-200 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+              </span>
+              Trigger Manual Alert
+            </button>
+          ) : (
+            <div className="w-full sm:w-auto px-6 py-3 bg-slate-800 text-slate-500 font-bold rounded-xl flex items-center gap-2 mb-5 text-sm border border-slate-700 cursor-not-allowed" title="Admin access required">
+              <span className="relative flex h-2 w-2">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-600" />
+              </span>
+              Trigger Manual Alert
+              <span className="text-[10px] font-mono text-slate-600 ml-1">(Admin only)</span>
+            </div>
+          )}
 
           <div>
             <h4 className="text-xs font-mono text-slate-500 uppercase tracking-widest border-b border-slate-700 pb-2 mb-3">
