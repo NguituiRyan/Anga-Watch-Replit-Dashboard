@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { signIn } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
-import { Eye, EyeOff, LogIn, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, LogIn, AlertTriangle, Zap } from "lucide-react";
 import logoUrl from "@assets/favicon_1774360352247.png";
+
+const JUDGE_EMAIL = "judge@angawatch.ke";
+const JUDGE_PASSWORD = "AngaWatch2026!";
 
 export function Login() {
   const { user, loading } = useAuth();
@@ -13,6 +16,7 @@ export function Login() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [judgeLoading, setJudgeLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && user) navigate("/");
@@ -29,6 +33,21 @@ export function Login() {
       setError(err.message ?? "Authentication failed");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleJudgeSignIn() {
+    setError(null);
+    setJudgeLoading(true);
+    setEmail(JUDGE_EMAIL);
+    setPassword(JUDGE_PASSWORD);
+    try {
+      await signIn({ email: JUDGE_EMAIL, password: JUDGE_PASSWORD });
+      navigate("/");
+    } catch (err: any) {
+      setError(err.message ?? "Judge sign-in failed. Please ensure the judge account exists.");
+    } finally {
+      setJudgeLoading(false);
     }
   }
 
@@ -101,7 +120,7 @@ export function Login() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || judgeLoading}
             className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? (
@@ -113,6 +132,31 @@ export function Login() {
               <>
                 <LogIn className="w-4 h-4" />
                 Access Dashboard
+              </>
+            )}
+          </button>
+
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-xs text-slate-600 font-mono uppercase tracking-wider">or</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleJudgeSignIn}
+            disabled={judgeLoading || submitting}
+            className="w-full py-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-400/50 text-amber-400 font-semibold text-sm tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {judgeLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                Signing in as Judge...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4" />
+                Instant Judge Access
               </>
             )}
           </button>
