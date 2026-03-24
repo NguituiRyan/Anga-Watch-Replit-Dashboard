@@ -35,7 +35,7 @@ function FloodGauge({ pct }: { pct: number }) {
   const bgEnd   = toXY(0);
   const endDeg  = -180 + (pct / 100) * 180;
   const end     = toXY(endDeg);
-  const large   = pct > 50 ? 1 : 0;
+  const large   = 0;
 
   return (
     <svg viewBox="0 0 100 58" className="w-full max-w-[160px]" style={{ filter: glow }}>
