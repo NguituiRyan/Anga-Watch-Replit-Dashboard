@@ -117,7 +117,12 @@ export function WalkthroughTour() {
   function close() {
     setOpen(false);
     setStep(0);
-    document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+    const top = document.getElementById("section-top");
+    if (top) {
+      top.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   return (

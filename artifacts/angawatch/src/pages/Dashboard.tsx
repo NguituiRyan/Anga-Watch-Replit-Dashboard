@@ -73,6 +73,7 @@ export function Dashboard() {
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+            <div id="section-top" />
             {/* Header */}
             <header className="mb-4 md:mb-6 flex flex-wrap items-start justify-between gap-3">
               <div>
