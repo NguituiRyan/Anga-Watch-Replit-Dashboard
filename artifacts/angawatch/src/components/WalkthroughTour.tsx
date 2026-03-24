@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BarChart2, ChevronLeft, ChevronRight, HelpCircle, Map, Smartphone, Sidebar, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type StepTarget = "sidebar" | "telemetry" | "chart" | "map" | "sms";
+type StepTarget = "sidebar" | "telemetry" | "chart" | "map" | "mesh" | "sms";
 
 interface Step {
   icon: React.ReactNode;
@@ -78,13 +78,25 @@ const dotMap: Record<string, string> = {
   amber: "bg-amber-500",
 };
 
-const scrollTargets: Partial<Record<StepTarget, number>> = {
-  sidebar: 0,
-  telemetry: 0,
-  chart: 240,
-  map: 860,
-  sms: 1500,
+const sectionIds: Partial<Record<StepTarget, string>> = {
+  telemetry: "section-telemetry",
+  chart:     "section-chart",
+  map:       "section-map",
+  mesh:      "section-mesh",
+  sms:       "section-sms",
 };
+
+function scrollToSection(target: StepTarget) {
+  if (target === "sidebar") {
+    document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  const id = sectionIds[target];
+  if (!id) return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 export function WalkthroughTour() {
   const [open, setOpen] = useState(false);
@@ -99,14 +111,13 @@ export function WalkthroughTour() {
 
   useEffect(() => {
     if (!open) return;
-    const y = scrollTargets[indicator] ?? 0;
-    window.scrollTo({ top: y, behavior: "smooth" });
+    scrollToSection(indicator);
   }, [indicator, open]);
 
   function close() {
     setOpen(false);
     setStep(0);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (

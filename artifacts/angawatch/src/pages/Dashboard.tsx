@@ -98,11 +98,11 @@ export function Dashboard() {
             </header>
 
             <div className="animate-in fade-in duration-500 ease-out fill-mode-both">
-              <TelemetryCards node={activeNode} onAboutNode={() => setNodeInfoOpen(true)} />
-              <PredictiveChart node={activeNode} />
-              <MapSection />
-              <MeshPanel />
-              <SmsSimulator onAlertTriggered={handleAlertTriggered} alertLog={alertLog} activeNode={activeNode} />
+              <div id="section-telemetry"><TelemetryCards node={activeNode} onAboutNode={() => setNodeInfoOpen(true)} /></div>
+              <div id="section-chart"><PredictiveChart node={activeNode} /></div>
+              <div id="section-map"><MapSection /></div>
+              <div id="section-mesh"><MeshPanel /></div>
+              <div id="section-sms"><SmsSimulator onAlertTriggered={handleAlertTriggered} alertLog={alertLog} activeNode={activeNode} /></div>
             </div>
 
             <footer className="mt-10 md:mt-12 py-6 border-t border-white/5 text-center text-xs font-mono text-slate-600">
