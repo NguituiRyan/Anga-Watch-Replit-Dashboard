@@ -40,10 +40,11 @@ export async function signIn({ email, password }: { email: string; password: str
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
 
-  await supabase
+  supabase
     .from("profiles")
     .update({ last_login: new Date().toISOString() })
-    .eq("id", data.user.id);
+    .eq("id", data.user.id)
+    .then(() => {});
 
   return data;
 }
