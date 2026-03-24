@@ -78,6 +78,22 @@ const dotMap: Record<string, string> = {
   amber: "bg-amber-500",
 };
 
+const frames: Record<StepTarget, string> = {
+  sidebar: "top-[76px] left-[24px] w-[312px] h-[260px]",
+  telemetry: "top-[104px] left-[352px] w-[calc(100vw-400px)] h-[220px]",
+  chart: "top-[332px] left-[352px] w-[calc(100vw-400px)] h-[330px]",
+  map: "top-[760px] left-[352px] w-[calc(100vw-400px)] h-[470px]",
+  sms: "top-[1260px] left-[352px] w-[calc(100vw-400px)] h-[560px]",
+};
+
+const scrollTargets: Partial<Record<StepTarget, number>> = {
+  sidebar: 0,
+  telemetry: 0,
+  chart: 240,
+  map: 860,
+  sms: 1500,
+};
+
 export function WalkthroughTour() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
@@ -88,6 +104,12 @@ export function WalkthroughTour() {
     const t = setTimeout(() => setOpen(true), 700);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const y = scrollTargets[indicator] ?? 0;
+    window.scrollTo({ top: y, behavior: "smooth" });
+  }, [indicator, open]);
 
   function close() {
     setOpen(false);
@@ -108,18 +130,14 @@ export function WalkthroughTour() {
       {open && (
         <>
           <div className="fixed inset-0 z-[10000] pointer-events-none">
-            <div
-              className={cn(
-                "absolute rounded-2xl border-2 border-emerald-400/90 shadow-[0_0_0_9999px_rgba(2,6,23,0.38),0_0_40px_rgba(16,185,129,0.35)] transition-all duration-500",
-                {
-                  "top-[76px] left-[24px] w-[312px] h-[260px]": indicator === "sidebar",
-                  "top-[104px] left-[352px] right-[24px] h-[220px]": indicator === "telemetry",
-                  "top-[332px] left-[352px] right-[24px] h-[330px]": indicator === "chart",
-                  "top-[760px] left-[352px] right-[24px] h-[470px]": indicator === "map",
-                  "top-[1260px] left-[352px] right-[24px] h-[560px]": indicator === "sms",
-                }
-              )}
-            />
+            {step > 0 && (
+              <div
+                className={cn(
+                  "absolute rounded-2xl border-2 border-emerald-400/90 shadow-[0_0_0_9999px_rgba(2,6,23,0.38),0_0_40px_rgba(16,185,129,0.35)] transition-all duration-500",
+                  frames[indicator]
+                )}
+              />
+            )}
           </div>
 
           <div className="fixed top-24 right-6 z-[10001] w-[360px] max-w-[calc(100vw-1.5rem)]">
