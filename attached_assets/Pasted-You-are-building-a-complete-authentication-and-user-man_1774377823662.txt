@@ -1,0 +1,422 @@
+You are building a complete authentication and user management system for AngaWatch — a flood early warning dashboard deployed on Replit using Next.js. The live dashboard is at https://anga-watch--nguitui.replit.app/. The entire dashboard currently has no authentication. Every route is public. Your job is to implement a full, production-ready auth system from scratch.
+
+---
+
+## TECH STACK
+- Framework: Next.js (already installed)
+- Database & Auth: Supabase (create a free project at supabase.com)
+- Session management: Supabase Auth (JWT-based, handled client-side via @supabase/supabase-js)
+- Styling: match the existing dashboard — dark theme, deep navy (#1A1A2E) backgrounds, teal (#00FFB2) accents
+
+---
+
+## ENVIRONMENT VARIABLES
+Create a .env.local file with these keys (user will fill in values from their Supabase project):
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+---
+
+## SUPABASE SETUP
+
+### 1. Run this SQL in the Supabase SQL editor to create the users profile table:
+
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  full_name TEXT,
+  organization TEXT,
+  phone TEXT,
+  role TEXT NOT NULL DEFAULT 'viewer',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  last_login TIMESTAMPTZ
+);
+
+-- Roles: 'admin', 'viewer', 'county_officer'
+-- admin: full access, can trigger alerts and manage nodes
+-- viewer: read-only dashboard
+-- county_officer: read-only + can download CSV reports
+
+-- Auto-create profile when a new user signs up
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'full_name',
+    COALESCE(new.raw_user_meta_data->>'role', 'viewer')
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Row Level Security
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own profile"
+  ON profiles FOR SELECT
+  USING (auth.uid() = id);
+
+CREATE POLICY "Admins can view all profiles"
+  ON profiles FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Users can update their own profile"
+  ON profiles FOR UPDATE
+  USING (auth.uid() = id);
+
+### 2. In Supabase Auth settings:
+- Enable Email provider
+- Disable "Confirm email" for hackathon speed (Auth > Providers > Email > toggle off confirmation)
+- Set Site URL to: https://anga-watch--nguitui.replit.app
+
+---
+
+## FILES TO CREATE
+
+### lib/supabaseClient.js
+Create the shared Supabase client used across all pages:
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+### lib/auth.js
+Helper functions for auth operations:
+
+import { supabase } from './supabaseClient'
+
+export async function signUp({ email, password, fullName, organization, phone, role = 'viewer' }) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: fullName, role }
+    }
+  })
+  if (error) throw error
+
+  // Update profile with extra fields
+  if (data.user) {
+    await supabase.from('profiles').update({
+      organization,
+      phone,
+      full_name: fullName
+    }).eq('id', data.user.id)
+  }
+  return data
+}
+
+export async function signIn({ email, password }) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) throw error
+
+  // Update last_login timestamp
+  await supabase.from('profiles')
+    .update({ last_login: new Date().toISOString() })
+    .eq('id', data.user.id)
+
+  return data
+}
+
+export async function signOut() {
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
+}
+
+export async function getCurrentUser() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  return { ...user, profile }
+}
+
+export async function getUserRole() {
+  const user = await getCurrentUser()
+  return user?.profile?.role || null
+}
+
+### hooks/useAuth.js
+React hook for auth state across the app:
+
+import { useState, useEffect, createContext, useContext } from 'react'
+import { supabase } from '../lib/supabaseClient'
+
+const AuthContext = createContext({})
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      if (session?.user) fetchProfile(session.user.id)
+      setLoading(false)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setUser(session?.user ?? null)
+        if (session?.user) {
+          await fetchProfile(session.user.id)
+        } else {
+          setProfile(null)
+        }
+        setLoading(false)
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function fetchProfile(userId) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+    setProfile(data)
+  }
+
+  const value = {
+    user,
+    profile,
+    loading,
+    isAdmin: profile?.role === 'admin',
+    isViewer: profile?.role === 'viewer',
+    isCountyOfficer: profile?.role === 'county_officer',
+    role: profile?.role
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+export const useAuth = () => useContext(AuthContext)
+
+### components/ProtectedRoute.js
+Wrapper component that guards any page behind auth:
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/router'
+import { useAuth } from '../hooks/useAuth'
+
+export default function ProtectedRoute({ children, requiredRole = null }) {
+  const { user, profile, loading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace('/login')
+        return
+      }
+      if (requiredRole && profile?.role !== requiredRole && profile?.role !== 'admin') {
+        router.replace('/dashboard')
+      }
+    }
+  }, [user, profile, loading, router, requiredRole])
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100vh', background: '#1A1A2E', color: '#00FFB2',
+        fontFamily: 'monospace', fontSize: '14px', letterSpacing: '2px'
+      }}>
+        ANGAWATCH AUTHENTICATING...
+      </div>
+    )
+  }
+
+  if (!user) return null
+
+  return children
+}
+
+---
+
+## PAGES TO CREATE
+
+### pages/login.js
+Full login page matching the AngaWatch dark aesthetic:
+
+- Background: #1A1A2E (deep navy), same as dashboard
+- Top: AngaWatch logo text in teal (#00FFB2) with a subtle pulse animation, subtitle "TANA BASIN EARLY WARNING SYSTEM"
+- Card: centered, dark (#0D1117) with teal border, subtle box shadow
+- Fields: Email, Password — dark inputs with teal focus border
+- Primary button: teal background (#00FFB2), dark text, full width, "ACCESS DASHBOARD"
+- Below button: "No account? Register here" link → /register
+- Error display: red alert box below the button showing the Supabase error message
+- On success: router.push('/dashboard')
+- Loading state: button text changes to "AUTHENTICATING..." and disables
+
+### pages/register.js
+Registration page, same visual style as login:
+
+Fields:
+- Full Name (text)
+- Organization / County (text, optional)
+- Phone Number (tel, for SMS alerts — with +254 prefix hint)
+- Email (email)
+- Password (password, min 8 chars)
+- Confirm Password (password)
+- Role selector (dropdown): Viewer | County Officer
+  (Admin role is NOT selectable — must be assigned manually in Supabase)
+
+Validation (client-side before submit):
+- All required fields filled
+- Passwords match
+- Password is at least 8 characters
+- Phone matches Kenyan format if provided (+254XXXXXXXXX)
+
+On success: show a green success message "Account created. Redirecting to dashboard..." then router.push('/dashboard') after 1.5 seconds
+
+### pages/dashboard.js (or wrap existing dashboard)
+Wrap your existing dashboard index page with ProtectedRoute:
+
+import ProtectedRoute from '../components/ProtectedRoute'
+// ... existing dashboard imports
+
+export default function Dashboard() {
+  return (
+    <ProtectedRoute>
+      {/* ALL existing dashboard JSX goes here unchanged */}
+    </ProtectedRoute>
+  )
+}
+
+---
+
+## DASHBOARD MODIFICATIONS
+
+### Add a user info bar to the top of the existing dashboard
+In the top navigation area of the dashboard, add a small status bar showing:
+- User's full name and role badge (color-coded: teal for admin, blue for county_officer, grey for viewer)
+- Last login timestamp
+- A "LOGOUT" button (top right, small, outlined in red)
+
+Example layout (add to existing nav):
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 24px', background: '#0D1117', borderBottom: '1px solid #1a2744' }}>
+  <span style={{ color: '#00FFB2', fontFamily: 'monospace', fontSize: '12px' }}>
+    {profile?.full_name} · <span style={{ color: roleBadgeColor }}>{profile?.role?.toUpperCase()}</span>
+  </span>
+  <button onClick={handleLogout} style={{ color: '#ff4444', border: '1px solid #ff4444', background: 'transparent', padding: '4px 12px', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px' }}>
+    LOGOUT
+  </button>
+</div>
+
+### Role-based UI gating
+Apply these rules to the existing dashboard UI:
+
+- "Trigger Manual Alert" button: visible and enabled ONLY for role === 'admin'
+  For viewer/county_officer: hide the button entirely or show it greyed out with tooltip "Admin access required"
+
+- Node management panel (if it exists): admin only
+
+- CSV download button (if it exists): visible for county_officer and admin, hidden for viewer
+
+---
+
+## _app.js MODIFICATION
+Wrap the entire app in AuthProvider so auth state is available on every page:
+
+import { AuthProvider } from '../hooks/useAuth'
+import '../styles/globals.css' // or whatever your global styles file is
+
+export default function App({ Component, pageProps }) {
+  return (
+    <AuthProvider>
+      <Component {...pageProps} />
+    </AuthProvider>
+  )
+}
+
+---
+
+## INSTALL THESE PACKAGES
+Run in the Replit shell before anything else:
+npm install @supabase/supabase-js
+
+---
+
+## REDIRECT LOGIC SUMMARY
+/login       → if already logged in → redirect to /dashboard
+/register    → if already logged in → redirect to /dashboard
+/dashboard   → if NOT logged in → redirect to /login
+/            → redirect to /dashboard (which then redirects to /login if needed)
+
+Add this redirect to login and register pages:
+useEffect(() => {
+  if (user) router.replace('/dashboard')
+}, [user])
+
+---
+
+## DEMO ACCOUNTS TO CREATE (do this manually in Supabase Auth after setup)
+Create these test users directly in Supabase > Authentication > Users > Invite user:
+1. admin@angawatch.ke / AngaWatch2024! → then manually set role = 'admin' in profiles table
+2. viewer@angawatch.ke / AngaWatch2024! → role = 'viewer' (default)
+3. county@angawatch.ke / AngaWatch2024! → role = 'county_officer'
+
+Use these accounts during the live judge demo.
+
+---
+
+## SECURITY NOTES
+- Never expose SUPABASE_SERVICE_ROLE_KEY to the client — only use it in API routes (pages/api/)
+- All dashboard API routes (/api/sensors, /api/alerts etc.) should verify the session token:
+
+// In any API route:
+import { createClient } from '@supabase/supabase-js'
+
+export default async function handler(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+  if (error || !user) return res.status(401).json({ error: 'Invalid token' })
+
+  // continue with handler logic...
+}
+
+---
+
+## WHAT SUCCESS LOOKS LIKE
+When complete, this flow must work end-to-end:
+1. Visiting https://anga-watch--nguitui.replit.app/ redirects to /login
+2. Entering wrong credentials shows a red error message
+3. Registering a new account creates a row in the Supabase profiles table
+4. Logging in as admin shows the full dashboard with the Trigger Alert button active
+5. Logging in as viewer shows the dashboard with Trigger Alert hidden/disabled
+6. Clicking LOGOUT clears the session and returns to /login
+7. Refreshing the page while logged in keeps the user logged in (persistent session)
+8. Directly visiting /dashboard while logged out redirects to /login
