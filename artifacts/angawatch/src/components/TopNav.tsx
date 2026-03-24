@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Activity, Menu } from "lucide-react";
+import { Activity, Menu, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoUrl from "@assets/favicon_1774360352247.png";
 
@@ -10,16 +10,24 @@ interface TopNavProps {
 
 export function TopNav({ onMenuOpen }: TopNavProps) {
   const [time, setTime] = useState(new Date());
+  const [lightMode, setLightMode] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (lightMode) {
+      document.documentElement.classList.add("light-mode");
+    } else {
+      document.documentElement.classList.remove("light-mode");
+    }
+  }, [lightMode]);
+
   return (
     <header className="h-14 md:h-16 w-full border-b border-white/5 bg-slate-900/90 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 z-50 sticky top-0">
       <div className="flex items-center gap-2 md:gap-3">
-        {/* Hamburger — mobile only */}
         {onMenuOpen && (
           <button
             onClick={onMenuOpen}
@@ -43,7 +51,7 @@ export function TopNav({ onMenuOpen }: TopNavProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 md:gap-6">
+      <div className="flex items-center gap-2 md:gap-4">
         <div className="font-mono text-sm text-slate-400 flex flex-col items-end">
           <span className="text-slate-200 text-xs md:text-sm">{format(time, "HH:mm:ss")}</span>
           <span className="text-[9px] md:text-[10px] hidden sm:block">{format(time, "dd MMM yyyy")}</span>
@@ -60,7 +68,7 @@ export function TopNav({ onMenuOpen }: TopNavProps) {
           </span>
         </div>
 
-        {/* Mobile-only status dot */}
+        {/* Mobile status dot */}
         <div className="sm:hidden flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
           <Activity className="w-3.5 h-3.5 text-emerald-400" />
           <span className="relative flex h-2 w-2">
@@ -68,6 +76,21 @@ export function TopNav({ onMenuOpen }: TopNavProps) {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
         </div>
+
+        {/* Dark / Light mode toggle */}
+        <button
+          onClick={() => setLightMode(!lightMode)}
+          className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-mono transition-all",
+            lightMode
+              ? "bg-amber-400/15 border-amber-400/40 text-amber-300 hover:bg-amber-400/25"
+              : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200"
+          )}
+          title={lightMode ? "Switch to dark mode" : "Switch to light mode"}
+        >
+          {lightMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+          <span className="hidden sm:inline">{lightMode ? "Light" : "Dark"}</span>
+        </button>
       </div>
     </header>
   );

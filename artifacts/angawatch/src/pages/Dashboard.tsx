@@ -9,7 +9,6 @@ import { MapSection } from "@/components/MapSection";
 import { MeshPanel } from "@/components/MeshPanel";
 import { WalkthroughTour } from "@/components/WalkthroughTour";
 import { NodeInfoPanel } from "@/components/NodeInfoPanel";
-import { AlertTimeline } from "@/components/AlertTimeline";
 import { CheckCircle2, X, Download, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -97,9 +96,6 @@ export function Dashboard() {
                 <WalkthroughTour />
               </div>
             </header>
-
-            {/* 72h Alert Timeline */}
-            <AlertTimeline />
 
             <div className="animate-in fade-in duration-500 ease-out fill-mode-both">
               <TelemetryCards node={activeNode} onAboutNode={() => setNodeInfoOpen(true)} />

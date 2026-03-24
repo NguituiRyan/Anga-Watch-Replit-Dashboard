@@ -192,3 +192,45 @@
 .leaflet-bar a:hover {
   background-color: #334155 !important;
 }
+
+/* ─── Zone tooltips ─── */
+.anga-zone-tip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.anga-zone-tip::before {
+  display: none !important;
+}
+
+.anga-zone-tooltip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.anga-zone-critical {
+  background: rgba(127, 29, 29, 0.95);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+.anga-zone-elevated {
+  background: rgba(120, 53, 15, 0.95);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+/* ─── Light mode override ─── */
+html.light-mode {
+  filter: invert(1) hue-rotate(180deg);
+}
+html.light-mode img,
+html.light-mode video,
+html.light-mode .leaflet-tile,
+html.light-mode .leaflet-container {
+  filter: invert(1) hue-rotate(180deg);
+}

@@ -25,7 +25,7 @@ const MARKERS: MarkerConfig[] = [
 
 const INUNDATION_ZONES = [
   {
-    name: "Hola Bridge Critical Zone",
+    name: "Hola Bridge — Critical Flood Zone",
     status: "CRITICAL",
     color: "#ef4444",
     coords: [
@@ -34,7 +34,7 @@ const INUNDATION_ZONES = [
     ] as [number, number][],
   },
   {
-    name: "Bura Elevated Zone",
+    name: "Bura — Elevated Risk Zone",
     status: "ELEVATED",
     color: "#f59e0b",
     coords: [
@@ -43,7 +43,7 @@ const INUNDATION_ZONES = [
     ] as [number, number][],
   },
   {
-    name: "Garsen Elevated Zone",
+    name: "Garsen — Elevated Risk Zone",
     status: "ELEVATED",
     color: "#f59e0b",
     coords: [
@@ -100,16 +100,18 @@ export function MapSection() {
 
     // Flood inundation zones
     INUNDATION_ZONES.forEach((zone) => {
-      L.polygon(zone.coords, {
+      const poly = L.polygon(zone.coords, {
         color: zone.color,
         fillColor: zone.color,
         fillOpacity: zone.status === "CRITICAL" ? 0.18 : 0.10,
         weight: 1.5,
         opacity: 0.5,
         dashArray: zone.status === "CRITICAL" ? undefined : "6 4",
-      }).addTo(map).bindTooltip(
-        `<div style="font-family:monospace;font-size:11px;color:#e2e8f0;padding:4px 8px;">${zone.name}</div>`,
-        { className: "anga-tooltip", sticky: true }
+      }).addTo(map);
+
+      poly.bindTooltip(
+        `<div class="anga-zone-tooltip ${zone.status === "CRITICAL" ? "anga-zone-critical" : "anga-zone-elevated"}">${zone.name}</div>`,
+        { sticky: true, className: "anga-zone-tip" }
       );
     });
 
@@ -159,13 +161,23 @@ export function MapSection() {
     return () => { map.remove(); mapInstanceRef.current = null; };
   }, []);
 
+  // Invalidate map size after fullscreen toggle — needs a beat for CSS to settle
   useEffect(() => {
-    setTimeout(() => mapInstanceRef.current?.invalidateSize(), 100);
+    const id = setTimeout(() => {
+      mapInstanceRef.current?.invalidateSize({ pan: false });
+    }, 250);
+    return () => clearTimeout(id);
   }, [fullscreen]);
 
   return (
-    <div className={`bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-4 md:p-6 mb-6 ${fullscreen ? "fixed inset-4 z-[7000] overflow-hidden flex flex-col" : ""}`}>
-      <div className="flex items-start justify-between mb-4">
+    <div
+      className={
+        fullscreen
+          ? "fixed inset-0 z-[7000] bg-slate-950 flex flex-col p-4 md:p-6"
+          : "bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-4 md:p-6 mb-6"
+      }
+    >
+      <div className="flex items-start justify-between mb-4 shrink-0">
         <div>
           <h3 className="text-lg font-semibold text-slate-200">Basin Overview — Sensor Network</h3>
           <p className="text-sm font-mono text-slate-500 mt-0.5">
@@ -173,7 +185,6 @@ export function MapSection() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Population at risk badge */}
           <div className="flex items-center gap-2 bg-amber-950/40 border border-amber-500/30 rounded-xl px-3 py-1.5">
             <Users className="w-4 h-4 text-amber-400 shrink-0" />
             <div className="text-right">
@@ -181,10 +192,9 @@ export function MapSection() {
               <p className="text-sm font-bold font-mono text-amber-300 tabular-nums">{totalAtRisk.toLocaleString()}</p>
             </div>
           </div>
-          {/* Fullscreen toggle */}
           <button
             onClick={() => setFullscreen(!fullscreen)}
-            className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-all"
+            className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-all shrink-0"
             title={fullscreen ? "Exit full screen" : "Full screen map"}
           >
             {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -192,13 +202,14 @@ export function MapSection() {
         </div>
       </div>
 
+      {/* Map container — flex-1 + min-h-0 lets it fill remaining space in fullscreen */}
       <div
         ref={mapRef}
-        className={`w-full rounded-xl overflow-hidden border border-slate-700/50 ${fullscreen ? "flex-1" : ""}`}
-        style={{ height: fullscreen ? undefined : "clamp(260px, 50vw, 440px)", zIndex: 0 }}
+        className="w-full rounded-xl overflow-hidden border border-slate-700/50 flex-1 min-h-0"
+        style={{ height: fullscreen ? undefined : "clamp(260px, 50vw, 440px)" }}
       />
 
-      <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs font-mono items-center">
+      <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs font-mono items-center shrink-0">
         <span className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-[0_0_6px_#10b981]" />
           <span className="text-slate-400">Normal</span>
@@ -213,7 +224,7 @@ export function MapSection() {
         </span>
         <span className="flex items-center gap-2 ml-2">
           <span className="w-7 h-2.5 rounded-sm bg-red-500/20 border border-red-500/40 inline-block" />
-          <span className="text-slate-500">Flood inundation zone</span>
+          <span className="text-slate-500">Critical flood zone</span>
         </span>
         <span className="flex items-center gap-2">
           <span className="w-7 h-2.5 rounded-sm bg-amber-500/15 border border-dashed border-amber-500/40 inline-block" />
