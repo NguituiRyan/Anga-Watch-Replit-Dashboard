@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
-import { useDashboardData } from "@/hooks/use-mock-data";
+import { useDashboardData, type BasinConfig } from "@/hooks/use-mock-data";
 import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
 import { TelemetryCards } from "@/components/TelemetryCards";
@@ -9,7 +9,7 @@ import { MapSection } from "@/components/MapSection";
 import { MeshPanel } from "@/components/MeshPanel";
 import { WalkthroughTour } from "@/components/WalkthroughTour";
 import { NodeInfoPanel } from "@/components/NodeInfoPanel";
-import { CheckCircle2, X, Download, ShieldCheck } from "lucide-react";
+import { CheckCircle2, X, Download, ShieldCheck, Droplets } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
@@ -25,6 +25,57 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
       <button onClick={onClose} className="ml-2 text-emerald-400 hover:text-white transition-colors">
         <X className="w-4 h-4" />
       </button>
+    </div>
+  );
+}
+
+function BasinTabs({
+  basins,
+  activeBasinId,
+  onSelect,
+}: {
+  basins: BasinConfig[];
+  activeBasinId: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="w-full bg-slate-900/80 border-b border-white/5 flex items-end overflow-x-auto shrink-0">
+      {basins.map((basin) => {
+        const isActive = basin.id === activeBasinId;
+        return (
+          <button
+            key={basin.id}
+            onClick={() => onSelect(basin.id)}
+            className={cn(
+              "relative flex items-center gap-2 px-5 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200 border-b-2 focus:outline-none",
+              isActive
+                ? "text-emerald-400 border-emerald-500 bg-emerald-950/20"
+                : "text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-800/40"
+            )}
+          >
+            <Droplets
+              className={cn(
+                "w-3.5 h-3.5 shrink-0 transition-colors",
+                isActive ? "text-emerald-400" : "text-slate-500"
+              )}
+            />
+            <span>{basin.name}</span>
+            <span
+              className={cn(
+                "ml-1 text-[9px] font-mono px-1.5 py-0.5 rounded border transition-colors",
+                isActive
+                  ? "text-emerald-400 border-emerald-500/30 bg-emerald-950/40"
+                  : "text-slate-500 border-slate-700/50 bg-slate-800/40"
+              )}
+            >
+              {basin.nodes.length} nodes
+            </span>
+          </button>
+        );
+      })}
+      <div className="ml-auto px-4 py-3 hidden sm:flex items-center gap-1.5 shrink-0">
+        <span className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">Active Basin</span>
+      </div>
     </div>
   );
 }
@@ -67,14 +118,14 @@ export function Dashboard() {
 
       <TopNav onMenuOpen={() => setMobileSidebarOpen(true)} />
 
+      <BasinTabs basins={basins} activeBasinId={activeBasinId} onSelect={setActiveBasinId} />
+
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
-          basins={basins}
-          activeBasinId={activeBasinId}
-          onSelectBasin={setActiveBasinId}
           nodes={nodes}
           activeNodeId={activeNodeId}
           onSelectNode={setActiveNodeId}
+          basinName={activeBasin.name}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}
         />
