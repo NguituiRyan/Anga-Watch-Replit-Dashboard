@@ -23,6 +23,7 @@ export function MapSection({ markers, inundationZones, mapCenter, mapZoom, basin
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
+  const [scrollActive, setScrollActive] = useState(false);
 
   const totalAtRisk = markers.filter(m => m.status !== "NORMAL").reduce((s, m) => s + m.population, 0);
 
@@ -48,7 +49,14 @@ export function MapSection({ markers, inundationZones, mapCenter, mapZoom, basin
       maxBoundsViscosity: 1.0,
       zoomControl: true,
       attributionControl: true,
+      scrollWheelZoom: false,
     });
+
+    const container = mapRef.current;
+    const enableScroll = () => { map.scrollWheelZoom.enable(); setScrollActive(true); };
+    const disableScroll = () => { map.scrollWheelZoom.disable(); setScrollActive(false); };
+    map.on("click", enableScroll);
+    container.addEventListener("mouseleave", disableScroll);
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
@@ -116,7 +124,12 @@ export function MapSection({ markers, inundationZones, mapCenter, mapZoom, basin
     });
 
     mapInstanceRef.current = map;
-    return () => { map.remove(); mapInstanceRef.current = null; };
+    return () => {
+      map.off("click", enableScroll);
+      container.removeEventListener("mouseleave", disableScroll);
+      map.remove();
+      mapInstanceRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -159,11 +172,19 @@ export function MapSection({ markers, inundationZones, mapCenter, mapZoom, basin
         </div>
       </div>
 
-      <div
-        ref={mapRef}
-        className="w-full rounded-xl overflow-hidden border border-slate-700/50 flex-1 min-h-0"
-        style={{ height: fullscreen ? undefined : "clamp(260px, 50vw, 440px)" }}
-      />
+      <div className="group relative flex-1 min-h-0" style={{ height: fullscreen ? undefined : "clamp(260px, 50vw, 440px)" }}>
+        <div
+          ref={mapRef}
+          className="w-full h-full rounded-xl overflow-hidden border border-slate-700/50"
+        />
+        {!scrollActive && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-xl">
+            <span className="opacity-0 group-hover:opacity-100 bg-slate-900/80 text-slate-300 text-xs font-mono px-3 py-1.5 rounded-full border border-slate-700 backdrop-blur-sm select-none transition-opacity duration-200">
+              Click map to enable scroll zoom
+            </span>
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs font-mono items-center shrink-0">
         <span className="flex items-center gap-2">
