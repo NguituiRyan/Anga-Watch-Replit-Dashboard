@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useDashboardData, type BasinConfig } from "@/hooks/use-mock-data";
 import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
@@ -87,18 +87,6 @@ export function Dashboard() {
   const [alertLog, setAlertLog] = useState<string[]>([]);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [nodeInfoOpen, setNodeInfoOpen] = useState(false);
-  const mainRef = useRef<HTMLElement>(null);
-  const hasMountedRef = useRef(false);
-
-  useLayoutEffect(() => {
-    const el = mainRef.current;
-    if (!el) return;
-    el.scrollTop = 0;
-    if (!hasMountedRef.current) {
-      window.scrollTo(0, 0);
-      hasMountedRef.current = true;
-    }
-  }, [activeNodeId]);
 
   const handleAlertTriggered = useCallback(() => {
     setFlashOverlay(true);
@@ -130,7 +118,7 @@ export function Dashboard() {
           onMobileClose={() => setMobileSidebarOpen(false)}
         />
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-900/40 relative">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-900/40 relative">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-900/10 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[120px] pointer-events-none" />
 

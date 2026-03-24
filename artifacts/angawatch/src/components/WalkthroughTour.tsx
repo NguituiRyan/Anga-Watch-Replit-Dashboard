@@ -105,11 +105,6 @@ export function WalkthroughTour() {
   const indicator = current.target;
 
   useEffect(() => {
-    const t = setTimeout(() => setOpen(true), 700);
-    return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
     if (!open) return;
     scrollToSection(indicator);
   }, [indicator, open]);

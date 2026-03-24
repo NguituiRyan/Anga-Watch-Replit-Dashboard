@@ -200,7 +200,8 @@ export function SmsSimulator({
   }, [activeNode?.id]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chat.length === 0) return;
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [chat, isTyping]);
 
   function handlePreset(preset: PresetQuery) {
