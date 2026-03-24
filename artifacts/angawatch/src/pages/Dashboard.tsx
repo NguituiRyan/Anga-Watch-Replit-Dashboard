@@ -34,13 +34,16 @@ export function Dashboard() {
   const [toast, setToast] = useState<string | null>(null);
   const [alertLog, setAlertLog] = useState<string[]>([]);
   const mainRef = useRef<HTMLElement>(null);
+  const hasMountedRef = useRef(false);
 
   useLayoutEffect(() => {
     const el = mainRef.current;
     if (!el) return;
-    requestAnimationFrame(() => {
-      el.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    });
+    el.scrollTop = 0;
+    if (!hasMountedRef.current) {
+      window.scrollTo(0, 0);
+      hasMountedRef.current = true;
+    }
   }, [activeNodeId]);
 
   const handleAlertTriggered = useCallback(() => {
@@ -68,7 +71,7 @@ export function Dashboard() {
       <div className="flex-1 flex overflow-hidden">
         <Sidebar nodes={nodes} activeNodeId={activeNodeId} onSelectNode={setActiveNodeId} />
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-900/40 relative scroll-smooth">
+        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-900/40 relative scroll-smooth">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-900/10 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[120px] pointer-events-none" />
 

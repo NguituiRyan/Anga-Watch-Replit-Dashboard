@@ -11,7 +11,7 @@ interface PresetQuery {
   label: string;
   lang: "en" | "sw";
   text: string;
-  replies: Record<string, string>; // keyed by node id
+  replies: Record<string, string>;
 }
 
 const PRESETS: PresetQuery[] = [
@@ -159,19 +159,11 @@ export function SmsSimulator({
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [langFilter, setLangFilter] = useState<"all" | "en" | "sw">("all");
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Clear chat when node changes
   useEffect(() => {
     setChat([]);
     setIsTyping(false);
   }, [activeNode?.id]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chat, isTyping]);
-
-  if (!activeNode) return null;
 
   function handlePreset(preset: PresetQuery) {
     if (isTyping) return;
@@ -211,12 +203,9 @@ export function SmsSimulator({
   return (
     <div className="bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 lg:p-8 mb-6">
       <div className="flex flex-col lg:flex-row gap-10 items-start">
-
-        {/* Feature Phone Mockup */}
         <div className="shrink-0 w-64">
           <div className="w-64 h-[440px] bg-slate-950 rounded-[2.5rem] border-[8px] border-slate-700 relative shadow-2xl overflow-hidden flex flex-col justify-between">
             <div className="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-1 bg-slate-800 rounded-full" />
-
             <div className="mt-10 mx-3 h-[200px] bg-[#07160c] border-4 border-slate-900 rounded-xl flex flex-col overflow-hidden relative shadow-inner">
               <div className="bg-emerald-500 text-slate-950 font-bold px-2 py-0.5 text-center text-[10px] tracking-widest shrink-0">
                 ANGAWATCH ALERT
@@ -257,7 +246,6 @@ export function SmsSimulator({
             </div>
           </div>
 
-          {/* Quick-Reply Buttons */}
           <div className="mt-5">
             <div className="flex gap-1.5 mb-3">
               {(["all", "en", "sw"] as const).map((f) => (
@@ -304,7 +292,6 @@ export function SmsSimulator({
           </div>
         </div>
 
-        {/* Info Panel */}
         <div className="flex-1 min-w-0">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 mb-4">
             <Smartphone className="w-4 h-4 text-emerald-400" />
@@ -317,7 +304,6 @@ export function SmsSimulator({
             life-saving flood warnings in English and Kiswahili to basic feature phones.
           </p>
 
-          {/* Chat area */}
           <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-4 mb-5 min-h-[120px] max-h-[280px] overflow-y-auto flex flex-col gap-2">
             {chat.length === 0 && !isTyping && (
               <p className="text-xs font-mono text-slate-600 m-auto text-center py-4">
@@ -350,10 +336,8 @@ export function SmsSimulator({
                 </div>
               </div>
             )}
-            <div ref={chatEndRef} />
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
             <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
               <Send className="w-5 h-5 text-blue-400 mb-2" />
@@ -372,7 +356,6 @@ export function SmsSimulator({
             </div>
           </div>
 
-          {/* Manual Alert Button */}
           <button
             onClick={onAlertTriggered}
             className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold rounded-xl transition-all flex items-center gap-2 mb-5 text-sm"
@@ -384,7 +367,6 @@ export function SmsSimulator({
             Trigger Manual Alert
           </button>
 
-          {/* Alert Log */}
           <div>
             <h4 className="text-xs font-mono text-slate-500 uppercase tracking-widest border-b border-slate-700 pb-2 mb-3">
               Gateway Activity Log
