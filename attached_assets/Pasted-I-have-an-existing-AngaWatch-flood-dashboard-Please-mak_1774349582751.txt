@@ -1,0 +1,74 @@
+I have an existing AngaWatch flood dashboard. Please make the following 
+specific improvements:
+HAVE AN ANIMATION SHOWING THE HYDROGRAPHS CLIMB WHEN SOMEONE CHECK OUT THE HYDROGRAPH
+
+1. RIVER VELOCITY FIX
+Change the river velocity reading from 14.2 m/s to 2.8 m/s.
+Add a subtitle: "+0.9 m/s from 6h ago | 47% above seasonal baseline"
+This is more hydrologically accurate for the Tana River.
+
+2. ADD A LIVE COUNTDOWN TIMER
+Replace the static "IMPACT IN 48 HOURS" text with a live JavaScript 
+countdown timer that counts down in HH:MM:SS format in real-time.
+Style it large, in red, and label it "PROJECTED IMPACT IN:"
+
+3. ADD AN INTERACTIVE MAP SECTION
+Add a new section below the hydrograph titled 
+"Basin Overview — Sensor Network".
+Use Leaflet.js with OpenStreetMap tiles. , even better show the river on the map like google maps and the points of interest along say the tana river
+Center on Tana River Basin, Kenya (lat: 0.5, lng: 39.5, zoom: 7).
+Place 5 circular markers:
+  - Garissa (upstream): lat 0.4531, lng 39.6413 — GREEN
+  - Bura: lat -1.1, lng 39.9 — AMBER  
+  - Hola Bridge (current): lat -1.5, lng 40.03 — RED (pulsing animation)
+  - Garsen: lat -2.26, lng 40.11 — AMBER
+  - Tana Delta: lat -2.58, lng 40.47 — GREEN
+Each marker popup should show: node name, water depth, flow rate, status.
+Make the Hola Bridge marker pulse with a red glow animation.
+
+4. FIX HYDROGRAPH — DISTINGUISH PAST FROM PREDICTED
+Split the discharge forecast line into two visual segments:
+- Days -5 to Today: solid blue line (historical/observed data)
+- Today to Day +4: dashed blue line (AI prediction)
+Add a vertical dotted white line at "Today" labeled "NOW"
+Add a text annotation: "← Observed | Predicted →"
+
+5. MAKE THE SMS SIMULATOR INTERACTIVE (TWO-WAY) HAVE PREDETERMINED TEXT TO SEND
+Below the phone mockup, add a text input field with placeholder: 
+"Uliza hali ya mto... (Ask about river status)"
+Add a SEND button styled in green.
+When the user types and clicks Send, show a simulated AI response 
+in a speech bubble below, e.g.:
+  Query: "Hali sasa?" → "Mto Tana: Kina 2.45m | Kasi JUU | 
+   Hatari: WASTANI. Kaa macho na ujiandae kuhama."
+  Query: "Is it safe?" → "CAUTION: River at 58% capacity. 
+   Evacuation order likely within 48hrs. Monitor alerts."
+  Query: "Help" → "Piga simu 0800-FLOOD (Free). 
+   Kituo cha karibu: Upper Hill Evacuation Centre."
+Rotate through 4-5 hardcoded responses based on keywords detected.
+
+6. EXPAND MESH NODE PANEL
+Replace the 3 tiny dots at the bottom left with a proper panel 
+showing each node as a card with:
+  - Node name (geographic)
+  - Battery percentage (e.g. 87%)
+  - Signal bars (3 out of 4)
+  - Last ping timestamp
+For Node A-02 (Bura), show: "⚠ SENSOR FAULT — Interpolating 
+from Node A-01 & A-03" to demonstrate daisy-chain resilience.
+
+7. MAKE SIDEBAR NODES CLICKABLE
+When user clicks Garissa or Garsen in the left sidebar, 
+switch the main dashboard to show that node's data 
+(use different hardcoded values for each node).
+Garissa: depth 1.2m, velocity 1.4 m/s, status NORMAL
+Garsen: depth 3.1m, velocity 2.2 m/s, status ELEVATED
+
+8. ANIMATE THE TRIGGER MANUAL ALERT BUTTON
+When "Trigger Manual Alert" is clicked:
+  - Flash the entire page with a brief red overlay
+  - Update the phone mockup to show a new SMS being composed 
+    with a typing animation
+  - Add a new entry to an alert log below: 
+    "[HH:MM] Manual alert dispatched — 12,847 recipients notified"
+  - Show a success toast: "✓ Alert sent in 3.2 seconds"

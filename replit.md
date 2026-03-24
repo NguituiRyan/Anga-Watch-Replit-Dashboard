@@ -16,6 +16,21 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
+## Artifacts
+
+### `artifacts/angawatch` (`@workspace/angawatch`)
+
+High-fidelity AngaWatch flood prediction dashboard. Dark-mode command center with:
+- Live ticking clock and system status badge in TopNav
+- Clickable sidebar nodes (Garissa/Hola Bridge/Garsen) with different data per node
+- TelemetryCards: water height, river velocity (+subtitle), AI status with live HH:MM:SS countdown
+- PredictiveChart: Recharts LineChart with observed (solid) vs AI-predicted (dashed) split, NOW reference line, animated on intersection
+- Leaflet.js map (CartoDB dark tiles) with 5 sensor markers, pulsing Hola Bridge in red, clickable popups
+- MeshPanel: 5 node cards showing battery %, signal bars, last ping, sensor fault warning for A-02
+- SmsSimulator: feature phone mockup + two-way SMS chat with keyword-based AI responses
+- Manual alert button: page flash, alert log, toast notification
+- Dependencies: recharts, leaflet, @types/leaflet, framer-motion, date-fns
+
 ## Structure
 
 ```text

@@ -106,3 +106,89 @@
 .animate-pulse-slow {
   animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* ─── Leaflet custom marker styles ─── */
+.sensor-marker {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sensor-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--mc, #10b981);
+  border: 2px solid rgba(255,255,255,0.6);
+  box-shadow: 0 0 6px var(--mc, #10b981);
+  position: relative;
+  z-index: 2;
+}
+
+.sensor-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--mc, #ef4444);
+  opacity: 0.7;
+  animation: sensor-pulse 1.8s ease-out infinite;
+  z-index: 1;
+}
+
+@keyframes sensor-pulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ─── Leaflet popup dark override ─── */
+.anga-popup .leaflet-popup-content-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding: 0;
+}
+
+.anga-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.anga-popup .leaflet-popup-tip-container {
+  display: none;
+}
+
+.anga-popup .leaflet-popup-close-button {
+  color: #94a3b8 !important;
+  top: 8px;
+  right: 8px;
+}
+
+/* Override leaflet default dark background */
+.leaflet-container {
+  background: #0f172a !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(15,23,42,0.8) !important;
+  color: #475569 !important;
+  font-size: 9px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #64748b !important;
+}
+
+.leaflet-bar a {
+  background-color: #1e293b !important;
+  color: #cbd5e1 !important;
+  border-color: #334155 !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #334155 !important;
+}
