@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { BarChart2, ChevronLeft, ChevronRight, HelpCircle, Map, Smartphone, Sidebar, Sparkles, X, Target } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BarChart2, ChevronLeft, ChevronRight, HelpCircle, Map, Smartphone, Sidebar, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type StepTarget = "sidebar" | "telemetry" | "chart" | "map" | "sms";
@@ -17,23 +17,23 @@ const STEPS: Step[] = [
   {
     icon: <HelpCircle className="w-6 h-6" />,
     title: "Quick walkthrough",
-    description: "Need a guide? I’ll point out the main parts of AngaWatch without blocking the page.",
-    tip: "You can close this anytime.",
+    description: "I’ll guide you through the dashboard and move the highlight as you go.",
+    tip: "This opens automatically when the site loads.",
     color: "emerald",
     target: "telemetry",
   },
   {
     icon: <Sidebar className="w-6 h-6" />,
     title: "Switch between river nodes",
-    description: "Use the left sidebar to move between Garissa, Hola Bridge, and Garsen. The dashboard updates instantly for the selected node.",
-    tip: "This area controls the whole command centre.",
+    description: "Use the left sidebar to move between Garissa, Hola Bridge, and Garsen.",
+    tip: "This controls the whole command centre.",
     color: "blue",
     target: "sidebar",
   },
   {
     icon: <Sparkles className="w-6 h-6" />,
     title: "Read the live telemetry",
-    description: "These cards show water height, velocity, and the AI status for the selected node.",
+    description: "These cards show water height, velocity, and AI status for the selected node.",
     tip: "Watch for the red surge warning.",
     color: "cyan",
     target: "telemetry",
@@ -82,8 +82,12 @@ export function WalkthroughTour() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const current = STEPS[step];
+  const indicator = current.target;
 
-  const indicator = useMemo(() => current.target, [current.target]);
+  useEffect(() => {
+    const t = setTimeout(() => setOpen(true), 700);
+    return () => clearTimeout(t);
+  }, []);
 
   function close() {
     setOpen(false);
@@ -104,13 +108,18 @@ export function WalkthroughTour() {
       {open && (
         <>
           <div className="fixed inset-0 z-[10000] pointer-events-none">
-            <div className={cn("absolute rounded-2xl border-2 border-emerald-400/90 shadow-[0_0_0_9999px_rgba(2,6,23,0.38),0_0_40px_rgba(16,185,129,0.35)] transition-all duration-300", {
-              "top-[76px] left-[24px] w-[312px] h-[260px]": indicator === "sidebar",
-              "top-[104px] left-[352px] right-[24px] h-[220px]": indicator === "telemetry",
-              "top-[332px] left-[352px] right-[24px] h-[330px]": indicator === "chart",
-              "top-[760px] left-[352px] right-[24px] h-[470px]": indicator === "map",
-              "top-[1260px] left-[352px] right-[24px] h-[560px]": indicator === "sms",
-            })} />
+            <div
+              className={cn(
+                "absolute rounded-2xl border-2 border-emerald-400/90 shadow-[0_0_0_9999px_rgba(2,6,23,0.38),0_0_40px_rgba(16,185,129,0.35)] transition-all duration-500",
+                {
+                  "top-[76px] left-[24px] w-[312px] h-[260px]": indicator === "sidebar",
+                  "top-[104px] left-[352px] right-[24px] h-[220px]": indicator === "telemetry",
+                  "top-[332px] left-[352px] right-[24px] h-[330px]": indicator === "chart",
+                  "top-[760px] left-[352px] right-[24px] h-[470px]": indicator === "map",
+                  "top-[1260px] left-[352px] right-[24px] h-[560px]": indicator === "sms",
+                }
+              )}
+            />
           </div>
 
           <div className="fixed top-24 right-6 z-[10001] w-[360px] max-w-[calc(100vw-1.5rem)]">
@@ -119,7 +128,7 @@ export function WalkthroughTour() {
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
                 <div>
                   <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Step {step + 1} of {STEPS.length}</p>
-                  <p className="text-sm font-semibold text-slate-100">Do you need a walkthrough?</p>
+                  <p className="text-sm font-semibold text-slate-100">Need a walkthrough?</p>
                 </div>
                 <button onClick={close} className="text-slate-500 hover:text-white transition-colors">
                   <X className="w-5 h-5" />
