@@ -21,15 +21,20 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ### `artifacts/angawatch` (`@workspace/angawatch`)
 
 High-fidelity AngaWatch flood prediction dashboard. Dark-mode command center with:
+- **Multi-basin selector**: Dropdown in sidebar to switch between Tana River Basin and Athi River Basin — each with full independent data (3 nodes, 5 map markers, 3 inundation zones, 5 mesh nodes, chart data, SMS replies)
 - Live ticking clock and system status badge in TopNav
-- Clickable sidebar nodes (Garissa/Hola Bridge/Garsen) with different data per node
-- TelemetryCards: water height, river velocity (+subtitle), AI status with live HH:MM:SS countdown
-- PredictiveChart: Recharts LineChart with observed (solid) vs AI-predicted (dashed) split, NOW reference line, animated on intersection
-- Leaflet.js map (CartoDB dark tiles) with 5 sensor markers, pulsing Hola Bridge in red, clickable popups
-- MeshPanel: 5 node cards showing battery %, signal bars, last ping, sensor fault warning for A-02
-- SmsSimulator: feature phone mockup + two-way SMS chat with keyword-based AI responses
+- Clickable sidebar nodes with different data per node (Tana: Garissa/Hola Bridge/Garsen; Athi: Athi River Town/Kibwezi/Malindi)
+- TelemetryCards: water height, river velocity (+subtitle), AI status with countdown, flood probability gauge
+- PredictiveChart: Recharts ComposedChart with observed vs predicted, rainfall overlay, CI confidence band
+- Leaflet.js map (CartoDB dark tiles) with sensor markers, inundation zones, fullscreen toggle — remounts on basin switch via React key
+- MeshPanel: per-basin mesh nodes with battery, signal, fault status
+- SmsSimulator: feature phone mockup + two-way SMS chat with hand-crafted Tana replies + dynamic reply generation for any basin
+- Dark/light mode toggle in TopNav
+- WalkthroughTour with scrollIntoView navigation
+- NodeInfoPanel slide-out with hardware specs, GPS, prototype photo
 - Manual alert button: page flash, alert log, toast notification
 - Dependencies: recharts, leaflet, @types/leaflet, framer-motion, date-fns
+- Data model: `BasinConfig` holds nodes, markers, inundation zones, mesh nodes, map center/zoom per basin in `use-mock-data.ts`
 
 ## Structure
 

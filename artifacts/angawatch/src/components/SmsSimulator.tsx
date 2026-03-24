@@ -12,6 +12,17 @@ interface PresetQuery {
   lang: "en" | "sw";
   text: string;
   replies: Record<string, string>;
+  dynamicReply: (node: NodeData, river: string) => string;
+}
+
+function peakDischarge(node: NodeData): string {
+  const last = node.chartData[node.chartData.length - 1];
+  return last?.discharge_predicted?.toLocaleString() ?? "—";
+}
+
+function peakDay(node: NodeData): string {
+  const last = node.chartData[node.chartData.length - 1];
+  return last?.day ?? "Day +4";
 }
 
 const PRESETS: PresetQuery[] = [
@@ -20,12 +31,14 @@ const PRESETS: PresetQuery[] = [
     lang: "en",
     text: "What is the current river status?",
     replies: {
-      "n-garissa":
-        "NORMAL: Tana River at Garissa — Depth 1.20m | Velocity 1.4 m/s (STABLE). Flow is within seasonal norms. No flood risk detected at this time.",
-      "n-hola":
-        "CRITICAL ALERT: Tana River at Hola Bridge — Depth 2.45m | Velocity 2.8 m/s (RISING FAST). River at 58% of critical capacity. Evacuation advisory in effect for low-lying areas.",
-      "n-garsen":
-        "ELEVATED: Tana River at Garsen — Depth 3.10m | Velocity 2.2 m/s (RISING). River at 72% of critical capacity. Precautionary advisory issued. Stay alert.",
+      "n-garissa": "NORMAL: Tana River at Garissa — Depth 1.20m | Velocity 1.4 m/s (STABLE). Flow is within seasonal norms. No flood risk detected at this time.",
+      "n-hola": "CRITICAL ALERT: Tana River at Hola Bridge — Depth 2.45m | Velocity 2.8 m/s (RISING FAST). River at 58% of critical capacity. Evacuation advisory in effect for low-lying areas.",
+      "n-garsen": "ELEVATED: Tana River at Garsen — Depth 3.10m | Velocity 2.2 m/s (RISING). River at 72% of critical capacity. Precautionary advisory issued. Stay alert.",
+    },
+    dynamicReply: (n, r) => {
+      if (n.status === "CRITICAL") return `CRITICAL ALERT: ${r} at ${n.name} — Depth ${n.metrics.height} | Velocity ${n.metrics.velocity} (RISING FAST). Flood probability ${n.floodProbability}%. Evacuation advisory in effect for low-lying areas.`;
+      if (n.status === "ELEVATED") return `ELEVATED: ${r} at ${n.name} — Depth ${n.metrics.height} | Velocity ${n.metrics.velocity} (RISING). Flood probability ${n.floodProbability}%. Precautionary advisory issued. Stay alert.`;
+      return `NORMAL: ${r} at ${n.name} — Depth ${n.metrics.height} | Velocity ${n.metrics.velocity} (STABLE). Flow is within seasonal norms. No flood risk detected at this time.`;
     },
   },
   {
@@ -33,12 +46,14 @@ const PRESETS: PresetQuery[] = [
     lang: "sw",
     text: "Hali ya mto sasa hivi ni nini?",
     replies: {
-      "n-garissa":
-        "KAWAIDA: Mto Tana huko Garissa — Kina 1.20m | Kasi 1.4 m/s (IMARA). Mtiririko ndani ya mipaka ya kawaida. Hakuna hatari ya mafuriko kwa sasa.",
-      "n-hola":
-        "TAHADHARI KUU: Mto Tana — Daraja la Hola — Kina 2.45m | Kasi 2.8 m/s (INAZIDI HARAKA). Mto uko asilimia 58 ya kiwango cha hatari. Watu wa maeneo ya chini waalike kuhama.",
-      "n-garsen":
-        "IMEONGEZEKA: Mto Tana huko Garsen — Kina 3.10m | Kasi 2.2 m/s (INAZIDI). Mto uko asilimia 72 ya kiwango cha hatari. Tahadhari imetolewa.",
+      "n-garissa": "KAWAIDA: Mto Tana huko Garissa — Kina 1.20m | Kasi 1.4 m/s (IMARA). Mtiririko ndani ya mipaka ya kawaida. Hakuna hatari ya mafuriko kwa sasa.",
+      "n-hola": "TAHADHARI KUU: Mto Tana — Daraja la Hola — Kina 2.45m | Kasi 2.8 m/s (INAZIDI HARAKA). Mto uko asilimia 58 ya kiwango cha hatari. Watu wa maeneo ya chini waalike kuhama.",
+      "n-garsen": "IMEONGEZEKA: Mto Tana huko Garsen — Kina 3.10m | Kasi 2.2 m/s (INAZIDI). Mto uko asilimia 72 ya kiwango cha hatari. Tahadhari imetolewa.",
+    },
+    dynamicReply: (n, r) => {
+      if (n.status === "CRITICAL") return `TAHADHARI KUU: ${r} huko ${n.name} — Kina ${n.metrics.height} | Kasi ${n.metrics.velocity} (INAZIDI HARAKA). Uwezekano wa mafuriko ${n.floodProbability}%. Watu wa maeneo ya chini wahamie sehemu ya juu.`;
+      if (n.status === "ELEVATED") return `IMEONGEZEKA: ${r} huko ${n.name} — Kina ${n.metrics.height} | Kasi ${n.metrics.velocity} (INAZIDI). Uwezekano wa mafuriko ${n.floodProbability}%. Tahadhari imetolewa.`;
+      return `KAWAIDA: ${r} huko ${n.name} — Kina ${n.metrics.height} | Kasi ${n.metrics.velocity} (IMARA). Mtiririko ndani ya mipaka ya kawaida. Hakuna hatari kwa sasa.`;
     },
   },
   {
@@ -46,12 +61,14 @@ const PRESETS: PresetQuery[] = [
     lang: "en",
     text: "Is it safe to stay near the river?",
     replies: {
-      "n-garissa":
-        "YES — Conditions at Garissa are NORMAL. No evacuation advisory is in effect. Continue monitoring AngaWatch for any changes.",
-      "n-hola":
-        "NO — It is NOT safe near Hola Bridge. Evacuation order likely within 48hrs. Move to higher ground immediately. Nearest shelter: Upper Hill Community Centre (3.2km north).",
-      "n-garsen":
-        "EXERCISE CAUTION — River at Garsen is ELEVATED. Avoid areas within 200m of the riverbank. Prepare an emergency kit and monitor hourly updates.",
+      "n-garissa": "YES — Conditions at Garissa are NORMAL. No evacuation advisory is in effect. Continue monitoring AngaWatch for any changes.",
+      "n-hola": "NO — It is NOT safe near Hola Bridge. Evacuation order likely within 48hrs. Move to higher ground immediately. Nearest shelter: Upper Hill Community Centre (3.2km north).",
+      "n-garsen": "EXERCISE CAUTION — River at Garsen is ELEVATED. Avoid areas within 200m of the riverbank. Prepare an emergency kit and monitor hourly updates.",
+    },
+    dynamicReply: (n) => {
+      if (n.status === "CRITICAL") return `NO — It is NOT safe near ${n.name}. Flood probability at ${n.floodProbability}%. Move to higher ground immediately. Follow local evacuation guidance.`;
+      if (n.status === "ELEVATED") return `EXERCISE CAUTION — River at ${n.name} is ELEVATED (${n.floodProbability}% flood risk). Avoid areas within 200m of the riverbank. Prepare an emergency kit and monitor hourly updates.`;
+      return `YES — Conditions at ${n.name} are NORMAL. No evacuation advisory is in effect. Continue monitoring AngaWatch for any changes.`;
     },
   },
   {
@@ -59,12 +76,14 @@ const PRESETS: PresetQuery[] = [
     lang: "sw",
     text: "Je, ni salama kukaa karibu na mto?",
     replies: {
-      "n-garissa":
-        "NDIYO — Hali huko Garissa ni ya KAWAIDA. Hakuna amri ya kuhama. Endelea kufuatilia arifa za AngaWatch kwa mabadiliko yoyote.",
-      "n-hola":
-        "HAPANA — Si salama karibu na Daraja la Hola. Amri ya kuhama inatarajiwa ndani ya masaa 48. Hamia sehemu ya juu mara moja. Kituo: Upper Hill (km 3.2 kaskazini).",
-      "n-garsen":
-        "TAHADHARI — Mto huko Garsen uko katika hali ya JUU. Epuka maeneo ndani ya mita 200 kutoka ukingoni. Andaa vifaa vya dharura na ufuatilie kila saa.",
+      "n-garissa": "NDIYO — Hali huko Garissa ni ya KAWAIDA. Hakuna amri ya kuhama. Endelea kufuatilia arifa za AngaWatch kwa mabadiliko yoyote.",
+      "n-hola": "HAPANA — Si salama karibu na Daraja la Hola. Amri ya kuhama inatarajiwa ndani ya masaa 48. Hamia sehemu ya juu mara moja. Kituo: Upper Hill (km 3.2 kaskazini).",
+      "n-garsen": "TAHADHARI — Mto huko Garsen uko katika hali ya JUU. Epuka maeneo ndani ya mita 200 kutoka ukingoni. Andaa vifaa vya dharura na ufuatilie kila saa.",
+    },
+    dynamicReply: (n) => {
+      if (n.status === "CRITICAL") return `HAPANA — Si salama karibu na ${n.name}. Uwezekano wa mafuriko ${n.floodProbability}%. Hamia sehemu ya juu mara moja. Fuata maelekezo ya kuhama.`;
+      if (n.status === "ELEVATED") return `TAHADHARI — Mto huko ${n.name} uko katika hali ya JUU (${n.floodProbability}%). Epuka maeneo ndani ya mita 200 kutoka ukingoni. Andaa vifaa vya dharura.`;
+      return `NDIYO — Hali huko ${n.name} ni ya KAWAIDA. Hakuna amri ya kuhama. Endelea kufuatilia arifa za AngaWatch.`;
     },
   },
   {
@@ -72,12 +91,14 @@ const PRESETS: PresetQuery[] = [
     lang: "en",
     text: "When will the flood peak arrive?",
     replies: {
-      "n-garissa":
-        "NO IMMEDIATE FLOOD RISK at Garissa. Discharge predicted stable at ~440 m³/s over the next 4 days — well below the 1,500 m³/s threshold. Monitor upstream conditions.",
-      "n-hola":
-        "AI FORECAST: Peak discharge at Hola Bridge predicted at ~2,820 m³/s by Day+4 (28 Mar). This WILL exceed the Critical Evacuation Threshold of 1,500 m³/s. Confidence: 87%.",
-      "n-garsen":
-        "AI FORECAST: Garsen discharge may reach 1,450 m³/s by Day+4 — just below the 1,500 m³/s threshold. Risk of crossing if upstream conditions at Hola worsen further.",
+      "n-garissa": "NO IMMEDIATE FLOOD RISK at Garissa. Discharge predicted stable at ~440 m³/s over the next 4 days — well below the 1,500 m³/s threshold. Monitor upstream conditions.",
+      "n-hola": "AI FORECAST: Peak discharge at Hola Bridge predicted at ~2,820 m³/s by Day+4 (28 Mar). This WILL exceed the Critical Evacuation Threshold of 1,500 m³/s. Confidence: 87%.",
+      "n-garsen": "AI FORECAST: Garsen discharge may reach 1,450 m³/s by Day+4 — just below the 1,500 m³/s threshold. Risk of crossing if upstream conditions at Hola worsen further.",
+    },
+    dynamicReply: (n) => {
+      if (n.status === "CRITICAL") return `AI FORECAST: Peak discharge at ${n.name} predicted at ~${peakDischarge(n)} m³/s by ${peakDay(n)}. This WILL exceed critical thresholds. Confidence: ${n.floodProbability}%.`;
+      if (n.status === "ELEVATED") return `AI FORECAST: ${n.name} discharge may reach ~${peakDischarge(n)} m³/s by ${peakDay(n)} — approaching critical threshold. Risk is ELEVATED. Monitor closely.`;
+      return `NO IMMEDIATE FLOOD RISK at ${n.name}. Discharge predicted stable at ~${peakDischarge(n)} m³/s over the next 4 days. Well below critical thresholds.`;
     },
   },
   {
@@ -85,12 +106,14 @@ const PRESETS: PresetQuery[] = [
     lang: "sw",
     text: "Mafuriko yatafika lini?",
     replies: {
-      "n-garissa":
-        "HAKUNA HATARI KWA SASA huko Garissa. Mtiririko unatarajiwa kuwa imara (~440 m³/s) kwa siku 4 zijazo — chini ya kiwango cha hatari cha 1,500 m³/s. Fuatilia mabadiliko.",
-      "n-hola":
-        "UTABIRI WA AI: Kilele cha mafuriko huko Daraja la Hola kinatarajiwa tarehe 28 Mar (Siku+4) — mtiririko wa 2,820 m³/s. ITAZIDI kiwango cha hatari cha 1,500 m³/s. Uhakika: 87%.",
-      "n-garsen":
-        "UTABIRI: Mtiririko wa Garsen unaweza kufikia 1,450 m³/s siku +4 — karibu na kiwango cha hatari cha 1,500 m³/s. Hatari inaongezeka kama hali ya Hola itazidi.",
+      "n-garissa": "HAKUNA HATARI KWA SASA huko Garissa. Mtiririko unatarajiwa kuwa imara (~440 m³/s) kwa siku 4 zijazo — chini ya kiwango cha hatari cha 1,500 m³/s. Fuatilia mabadiliko.",
+      "n-hola": "UTABIRI WA AI: Kilele cha mafuriko huko Daraja la Hola kinatarajiwa tarehe 28 Mar (Siku+4) — mtiririko wa 2,820 m³/s. ITAZIDI kiwango cha hatari cha 1,500 m³/s. Uhakika: 87%.",
+      "n-garsen": "UTABIRI: Mtiririko wa Garsen unaweza kufikia 1,450 m³/s siku +4 — karibu na kiwango cha hatari cha 1,500 m³/s. Hatari inaongezeka kama hali ya Hola itazidi.",
+    },
+    dynamicReply: (n) => {
+      if (n.status === "CRITICAL") return `UTABIRI WA AI: Kilele cha mafuriko huko ${n.name} — mtiririko wa ~${peakDischarge(n)} m³/s ifikapo ${peakDay(n)}. ITAZIDI kiwango cha hatari. Uhakika: ${n.floodProbability}%.`;
+      if (n.status === "ELEVATED") return `UTABIRI: Mtiririko wa ${n.name} unaweza kufikia ~${peakDischarge(n)} m³/s ifikapo ${peakDay(n)} — karibu na kiwango cha hatari. Fuatilia kwa makini.`;
+      return `HAKUNA HATARI KWA SASA huko ${n.name}. Mtiririko unatarajiwa kuwa imara (~${peakDischarge(n)} m³/s) kwa siku 4 zijazo. Fuatilia mabadiliko.`;
     },
   },
   {
@@ -98,12 +121,14 @@ const PRESETS: PresetQuery[] = [
     lang: "en",
     text: "HELP — I need emergency assistance!",
     replies: {
-      "n-garissa":
-        "EMERGENCY LINE: Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Note: Garissa conditions are currently NORMAL — no immediate threat at your location.",
-      "n-hola":
-        "EMERGENCY RECEIVED at Hola Bridge zone. Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Nearest shelter: Upper Hill Evacuation Centre. Evacuate to high ground NOW.",
-      "n-garsen":
-        "EMERGENCY RECEIVED. Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Nearest shelter: Garsen Town Hall (1.8km east). Conditions ELEVATED — be ready to evacuate.",
+      "n-garissa": "EMERGENCY LINE: Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Note: Garissa conditions are currently NORMAL — no immediate threat at your location.",
+      "n-hola": "EMERGENCY RECEIVED at Hola Bridge zone. Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Nearest shelter: Upper Hill Evacuation Centre. Evacuate to high ground NOW.",
+      "n-garsen": "EMERGENCY RECEIVED. Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Nearest shelter: Garsen Town Hall (1.8km east). Conditions ELEVATED — be ready to evacuate.",
+    },
+    dynamicReply: (n) => {
+      if (n.status === "CRITICAL") return `EMERGENCY RECEIVED at ${n.name} zone. Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Evacuate to high ground NOW. ${n.populationAtRisk.toLocaleString()} people in affected area.`;
+      if (n.status === "ELEVATED") return `EMERGENCY RECEIVED. Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Conditions ELEVATED at ${n.name} — be ready to evacuate on short notice.`;
+      return `EMERGENCY LINE: Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Note: ${n.name} conditions are currently NORMAL — no immediate threat at your location.`;
     },
   },
   {
@@ -111,12 +136,14 @@ const PRESETS: PresetQuery[] = [
     lang: "sw",
     text: "MSAADA — Nahitaji msaada wa dharura!",
     replies: {
-      "n-garissa":
-        "SIMU YA DHARURA: Piga BURE: 0800-FLOOD. Red Cross Kenya: +254 20 395 0000. Kumbuka: Hali huko Garissa ni ya KAWAIDA — hakuna hatari ya haraka mahali pako.",
-      "n-hola":
-        "DHARURA IMEPOKELEWA eneo la Daraja la Hola. Piga BURE: 0800-FLOOD. Red Cross: +254 20 395 0000. Kituo: Upper Hill. HAMIA MAHALI PA JUU SASA HIVI.",
-      "n-garsen":
-        "DHARURA IMEPOKELEWA. Piga BURE: 0800-FLOOD. Red Cross: +254 20 395 0000. Kituo cha karibu: Garsen Town Hall (mashariki, km 1.8). Jiandae kuhama mara moja.",
+      "n-garissa": "SIMU YA DHARURA: Piga BURE: 0800-FLOOD. Red Cross Kenya: +254 20 395 0000. Kumbuka: Hali huko Garissa ni ya KAWAIDA — hakuna hatari ya haraka mahali pako.",
+      "n-hola": "DHARURA IMEPOKELEWA eneo la Daraja la Hola. Piga BURE: 0800-FLOOD. Red Cross: +254 20 395 0000. Kituo: Upper Hill. HAMIA MAHALI PA JUU SASA HIVI.",
+      "n-garsen": "DHARURA IMEPOKELEWA. Piga BURE: 0800-FLOOD. Red Cross: +254 20 395 0000. Kituo cha karibu: Garsen Town Hall (mashariki, km 1.8). Jiandae kuhama mara moja.",
+    },
+    dynamicReply: (n) => {
+      if (n.status === "CRITICAL") return `DHARURA IMEPOKELEWA eneo la ${n.name}. Piga BURE: 0800-FLOOD. Red Cross: +254 20 395 0000. Watu ${n.populationAtRisk.toLocaleString()} wako hatarini. HAMIA MAHALI PA JUU SASA HIVI.`;
+      if (n.status === "ELEVATED") return `DHARURA IMEPOKELEWA. Piga BURE: 0800-FLOOD. Red Cross: +254 20 395 0000. Hali ya ${n.name} IMEONGEZEKA — jiandae kuhama mara moja.`;
+      return `SIMU YA DHARURA: Piga BURE: 0800-FLOOD. Red Cross Kenya: +254 20 395 0000. Kumbuka: Hali huko ${n.name} ni ya KAWAIDA — hakuna hatari ya haraka mahali pako.`;
     },
   },
   {
@@ -124,12 +151,14 @@ const PRESETS: PresetQuery[] = [
     lang: "en",
     text: "What is the current water depth?",
     replies: {
-      "n-garissa":
-        "Garissa (Upstream) — Depth: 1.20m | Critical threshold: 3.00m | Safety margin: 1.80m. Status: STABLE. No significant change in the last 6hrs.",
-      "n-hola":
-        "Hola Bridge (Midstream) — Depth: 2.45m | Critical threshold: 3.00m | Safety margin: 0.55m and FALLING. Rate of rise: +0.18m per 6hrs. Estimated time to critical: ~18 hours.",
-      "n-garsen":
-        "Garsen (Downstream) — Depth: 3.10m | Critical threshold: 4.30m | Safety margin: 1.20m and FALLING. Rate of rise: +0.22m per 6hrs. Close monitoring required.",
+      "n-garissa": "Garissa (Upstream) — Depth: 1.20m | Critical threshold: 3.00m | Safety margin: 1.80m. Status: STABLE. No significant change in the last 6hrs.",
+      "n-hola": "Hola Bridge (Midstream) — Depth: 2.45m | Critical threshold: 3.00m | Safety margin: 0.55m and FALLING. Rate of rise: +0.18m per 6hrs. Estimated time to critical: ~18 hours.",
+      "n-garsen": "Garsen (Downstream) — Depth: 3.10m | Critical threshold: 4.30m | Safety margin: 1.20m and FALLING. Rate of rise: +0.22m per 6hrs. Close monitoring required.",
+    },
+    dynamicReply: (n) => {
+      if (n.status === "CRITICAL") return `${n.name} (${n.location}) — Depth: ${n.metrics.height} | Flood probability: ${n.floodProbability}%. Safety margin CRITICALLY LOW. Rate of rise accelerating. Immediate action required.`;
+      if (n.status === "ELEVATED") return `${n.name} (${n.location}) — Depth: ${n.metrics.height} | Flood probability: ${n.floodProbability}%. Safety margin FALLING. Close monitoring required. ${n.metrics.velocitySubtitle}.`;
+      return `${n.name} (${n.location}) — Depth: ${n.metrics.height} | Status: STABLE. No significant change in the last 6hrs. ${n.metrics.velocitySubtitle}.`;
     },
   },
   {
@@ -137,12 +166,14 @@ const PRESETS: PresetQuery[] = [
     lang: "sw",
     text: "Kina cha mto ni kiasi gani sasa?",
     replies: {
-      "n-garissa":
-        "Garissa (Chanzo) — Kina: 1.20m | Kiwango cha hatari: 3.00m | Pembejeo: 1.80m. Hali: IMARA. Hakuna mabadiliko makubwa kwa masaa 6 iliyopita.",
-      "n-hola":
-        "Daraja la Hola (Katikati) — Kina: 2.45m | Kiwango cha hatari: 3.00m | Pembejeo: 0.55m INASHUKA. Muda wa kufikia hatari: masaa ~18.",
-      "n-garsen":
-        "Garsen (Chini ya Mto) — Kina: 3.10m | Kiwango cha hatari: 4.30m | Pembejeo: 1.20m INASHUKA. Fuatilia kwa makini.",
+      "n-garissa": "Garissa (Chanzo) — Kina: 1.20m | Kiwango cha hatari: 3.00m | Pembejeo: 1.80m. Hali: IMARA. Hakuna mabadiliko makubwa kwa masaa 6 iliyopita.",
+      "n-hola": "Daraja la Hola (Katikati) — Kina: 2.45m | Kiwango cha hatari: 3.00m | Pembejeo: 0.55m INASHUKA. Muda wa kufikia hatari: masaa ~18.",
+      "n-garsen": "Garsen (Chini ya Mto) — Kina: 3.10m | Kiwango cha hatari: 4.30m | Pembejeo: 1.20m INASHUKA. Fuatilia kwa makini.",
+    },
+    dynamicReply: (n) => {
+      if (n.status === "CRITICAL") return `${n.name} (${n.location}) — Kina: ${n.metrics.height} | Uwezekano wa mafuriko: ${n.floodProbability}%. Pembejeo CHINI SANA. Hatua ya haraka inahitajika.`;
+      if (n.status === "ELEVATED") return `${n.name} (${n.location}) — Kina: ${n.metrics.height} | Uwezekano wa mafuriko: ${n.floodProbability}%. Pembejeo INASHUKA. Fuatilia kwa makini.`;
+      return `${n.name} (${n.location}) — Kina: ${n.metrics.height} | Hali: IMARA. Hakuna mabadiliko makubwa kwa masaa 6 iliyopita.`;
     },
   },
 ];
@@ -151,23 +182,30 @@ export function SmsSimulator({
   onAlertTriggered,
   alertLog,
   activeNode,
+  basinName,
 }: {
   onAlertTriggered: () => void;
   alertLog: string[];
   activeNode: NodeData;
+  basinName: string;
 }) {
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [langFilter, setLangFilter] = useState<"all" | "en" | "sw">("all");
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setChat([]);
     setIsTyping(false);
   }, [activeNode?.id]);
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chat, isTyping]);
+
   function handlePreset(preset: PresetQuery) {
     if (isTyping) return;
-    const reply = preset.replies[activeNode.id] ?? preset.replies["n-hola"];
+    const reply = preset.replies[activeNode.id] ?? preset.dynamicReply(activeNode, basinName);
     setChat((prev) => [...prev, { role: "user", text: preset.text }]);
     setIsTyping(true);
     setTimeout(() => {
@@ -195,16 +233,15 @@ export function SmsSimulator({
 
   const phoneMsg =
     activeNode.status === "CRITICAL"
-      ? { loc: "Hola Bridge (Tana River)", body: "Water rising rapidly.", action: "EVACUATE LOW-LYING AREAS IMMEDIATELY." }
+      ? { loc: `${activeNode.name} (${basinName})`, body: "Water rising rapidly.", action: "EVACUATE LOW-LYING AREAS IMMEDIATELY." }
       : activeNode.status === "ELEVATED"
-      ? { loc: "Garsen (Tana River)", body: "Elevated flow detected.", action: "PREPARE EMERGENCY KIT. STAY ALERT." }
-      : { loc: "Garissa (Tana River)", body: "Conditions normal.", action: "NO ACTION REQUIRED. MONITOR ALERTS." };
+      ? { loc: `${activeNode.name} (${basinName})`, body: "Elevated flow detected.", action: "PREPARE EMERGENCY KIT. STAY ALERT." }
+      : { loc: `${activeNode.name} (${basinName})`, body: "Conditions normal.", action: "NO ACTION REQUIRED. MONITOR ALERTS." };
 
   return (
     <div className="bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-4 md:p-6 lg:p-8 mb-6">
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
 
-        {/* Left: phone mockup only */}
         <div className="w-full lg:w-64 lg:shrink-0 flex justify-center lg:justify-start">
           <div className="w-64 h-[440px] bg-slate-950 rounded-[2.5rem] border-[8px] border-slate-700 relative shadow-2xl overflow-hidden flex flex-col justify-between">
             <div className="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-1 bg-slate-800 rounded-full" />
@@ -249,7 +286,6 @@ export function SmsSimulator({
           </div>
         </div>
 
-        {/* Right: header, presets, chat, stats, log */}
         <div className="flex-1 min-w-0">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 mb-4">
             <Smartphone className="w-4 h-4 text-emerald-400" />
@@ -262,7 +298,6 @@ export function SmsSimulator({
             life-saving flood warnings in English and Kiswahili to basic feature phones.
           </p>
 
-          {/* Quick-reply prompts — above the chat */}
           <div className="mb-3">
             <div className="flex items-center gap-1.5 mb-2">
               {(["all", "en", "sw"] as const).map((f) => (
@@ -308,7 +343,6 @@ export function SmsSimulator({
             </div>
           </div>
 
-          {/* Chat box */}
           <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-4 mb-5 min-h-[100px] max-h-[260px] overflow-y-auto flex flex-col gap-2">
             {chat.length === 0 && !isTyping && (
               <p className="text-xs font-mono text-slate-600 m-auto text-center py-4">
@@ -341,6 +375,7 @@ export function SmsSimulator({
                 </div>
               </div>
             )}
+            <div ref={chatEndRef} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
@@ -386,14 +421,14 @@ export function SmsSimulator({
               <div className="flex items-center justify-between text-sm py-2 hover:bg-slate-800/50 px-2 rounded transition-colors cursor-default">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-slate-300 font-medium text-xs font-mono">Batch Broadcast — Hola Region</span>
+                  <span className="text-slate-300 font-medium text-xs font-mono">Batch Broadcast — {activeNode.name} Region</span>
                 </div>
                 <span className="text-slate-500 font-mono text-xs">Just now</span>
               </div>
               <div className="flex items-center justify-between text-sm py-2 hover:bg-slate-800/50 px-2 rounded transition-colors cursor-default">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-slate-300 font-medium text-xs font-mono">System Ping — Garsen Node</span>
+                  <span className="text-slate-300 font-medium text-xs font-mono">System Ping — {activeNode.name} Node</span>
                 </div>
                 <span className="text-slate-500 font-mono text-xs">14 mins ago</span>
               </div>

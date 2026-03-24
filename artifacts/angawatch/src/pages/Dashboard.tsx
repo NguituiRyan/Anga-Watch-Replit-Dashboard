@@ -30,7 +30,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 }
 
 export function Dashboard() {
-  const { nodes, activeNodeId, setActiveNodeId, activeNode } = useDashboardData();
+  const { basins, activeBasinId, setActiveBasinId, activeBasin, nodes, activeNodeId, setActiveNodeId, activeNode } = useDashboardData();
   const [flashOverlay, setFlashOverlay] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [alertLog, setAlertLog] = useState<string[]>([]);
@@ -59,6 +59,8 @@ export function Dashboard() {
     setToast("✓ Alert sent in 3.2 seconds");
   }, []);
 
+  const avgUptime = (activeBasin.nodes.reduce((s, n) => s + parseFloat(n.uptime), 0) / activeBasin.nodes.length).toFixed(1);
+
   return (
     <div className="min-h-screen bg-background flex flex-col text-foreground overflow-hidden relative">
       <div className={cn("fixed inset-0 bg-red-500/20 pointer-events-none z-[9998] transition-opacity duration-300", flashOverlay ? "opacity-100" : "opacity-0")} />
@@ -66,7 +68,16 @@ export function Dashboard() {
       <TopNav onMenuOpen={() => setMobileSidebarOpen(true)} />
 
       <div className="flex-1 flex overflow-hidden">
-        <Sidebar nodes={nodes} activeNodeId={activeNodeId} onSelectNode={setActiveNodeId} mobileOpen={mobileSidebarOpen} onMobileClose={() => setMobileSidebarOpen(false)} />
+        <Sidebar
+          basins={basins}
+          activeBasinId={activeBasinId}
+          onSelectBasin={setActiveBasinId}
+          nodes={nodes}
+          activeNodeId={activeNodeId}
+          onSelectNode={setActiveNodeId}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
+        />
 
         <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-900/40 relative">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-900/10 rounded-full blur-[120px] pointer-events-none" />
@@ -74,21 +85,22 @@ export function Dashboard() {
 
           <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
             <div id="section-top" />
-            {/* Header */}
             <header className="mb-4 md:mb-6 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-100">Command Center</h2>
-                <p className="text-slate-400 mt-1 text-sm md:text-base">Real-time hydrological monitoring and early warning system.</p>
-                {/* Uptime badge */}
+                <p className="text-slate-400 mt-1 text-sm md:text-base">
+                  {activeBasin.name} — {activeBasin.region}
+                </p>
                 <div className="flex items-center gap-2 mt-2">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-[10px] font-mono text-emerald-400/80 uppercase tracking-wider">Mesh Active · Avg Uptime 99.6% (30d)</span>
+                  <span className="text-[10px] font-mono text-emerald-400/80 uppercase tracking-wider">
+                    Mesh Active · Avg Uptime {avgUptime}% (30d) · {activeBasin.markers.length} sensors deployed
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Mock export button */}
                 <button
-                  onClick={() => setToast("✓ Briefing PDF generated — angawatch_brief_24mar2026.pdf")}
+                  onClick={() => setToast(`✓ Briefing PDF generated — angawatch_${activeBasin.id}_brief_24mar2026.pdf`)}
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-all text-xs font-mono"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -101,9 +113,23 @@ export function Dashboard() {
             <div className="animate-in fade-in duration-500 ease-out fill-mode-both">
               <div id="section-telemetry"><TelemetryCards node={activeNode} onAboutNode={() => setNodeInfoOpen(true)} /></div>
               <div id="section-chart"><PredictiveChart node={activeNode} /></div>
-              <div id="section-map"><MapSection /></div>
-              <div id="section-mesh"><MeshPanel /></div>
-              <div id="section-sms"><SmsSimulator onAlertTriggered={handleAlertTriggered} alertLog={alertLog} activeNode={activeNode} /></div>
+              <div id="section-map">
+                <MapSection
+                  key={activeBasinId}
+                  markers={activeBasin.markers}
+                  inundationZones={activeBasin.inundationZones}
+                  mapCenter={activeBasin.mapCenter}
+                  mapZoom={activeBasin.mapZoom}
+                  basinName={activeBasin.name}
+                  nodeCount={activeBasin.markers.length}
+                />
+              </div>
+              <div id="section-mesh">
+                <MeshPanel meshNodes={activeBasin.meshNodes} basinName={activeBasin.name} />
+              </div>
+              <div id="section-sms">
+                <SmsSimulator onAlertTriggered={handleAlertTriggered} alertLog={alertLog} activeNode={activeNode} basinName={activeBasin.river} />
+              </div>
             </div>
 
             <footer className="mt-10 md:mt-12 py-6 border-t border-white/5 text-center text-xs font-mono text-slate-600">

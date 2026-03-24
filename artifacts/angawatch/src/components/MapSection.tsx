@@ -2,56 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Maximize2, Minimize2, Users } from "lucide-react";
+import { type MarkerConfig, type InundationZone } from "@/hooks/use-mock-data";
 
-interface MarkerConfig {
-  lat: number;
-  lng: number;
-  name: string;
-  depth: string;
-  flow: string;
-  status: "NORMAL" | "ELEVATED" | "CRITICAL";
-  color: string;
-  pulse?: boolean;
-  population: number;
+interface MapSectionProps {
+  markers: MarkerConfig[];
+  inundationZones: InundationZone[];
+  mapCenter: [number, number];
+  mapZoom: number;
+  basinName: string;
+  nodeCount: number;
 }
-
-const MARKERS: MarkerConfig[] = [
-  { lat: -0.4531, lng: 39.6413, name: "Garissa (Upstream)",     depth: "1.20m", flow: "1.4 m/s", status: "NORMAL",   color: "#10b981", population: 2400  },
-  { lat: -1.1,    lng: 39.9,    name: "Bura",                    depth: "1.75m", flow: "1.9 m/s", status: "ELEVATED", color: "#f59e0b", population: 7200  },
-  { lat: -1.5,    lng: 40.03,   name: "Hola Bridge (Midstream)", depth: "2.45m", flow: "2.8 m/s", status: "CRITICAL", color: "#ef4444", population: 34700, pulse: true },
-  { lat: -2.26,   lng: 40.11,   name: "Garsen",                  depth: "3.10m", flow: "2.2 m/s", status: "ELEVATED", color: "#f59e0b", population: 18200 },
-  { lat: -2.58,   lng: 40.47,   name: "Tana Delta",              depth: "0.90m", flow: "0.8 m/s", status: "NORMAL",   color: "#10b981", population: 3800  },
-];
-
-const INUNDATION_ZONES = [
-  {
-    name: "Hola Bridge — Critical Flood Zone",
-    status: "CRITICAL",
-    color: "#ef4444",
-    coords: [
-      [-1.38, 39.88], [-1.38, 40.17], [-1.45, 40.22],
-      [-1.62, 40.18], [-1.65, 39.93], [-1.55, 39.85],
-    ] as [number, number][],
-  },
-  {
-    name: "Bura — Elevated Risk Zone",
-    status: "ELEVATED",
-    color: "#f59e0b",
-    coords: [
-      [-0.98, 39.78], [-0.98, 40.02], [-1.08, 40.05],
-      [-1.22, 39.98], [-1.22, 39.78],
-    ] as [number, number][],
-  },
-  {
-    name: "Garsen — Elevated Risk Zone",
-    status: "ELEVATED",
-    color: "#f59e0b",
-    coords: [
-      [-2.12, 39.99], [-2.12, 40.22], [-2.22, 40.25],
-      [-2.38, 40.20], [-2.40, 39.99],
-    ] as [number, number][],
-  },
-];
 
 const statusLabel: Record<string, string> = {
   NORMAL: "🟢 NORMAL",
@@ -59,12 +19,12 @@ const statusLabel: Record<string, string> = {
   CRITICAL: "🔴 CRITICAL",
 };
 
-const totalAtRisk = MARKERS.filter(m => m.status !== "NORMAL").reduce((s, m) => s + m.population, 0);
-
-export function MapSection() {
+export function MapSection({ markers, inundationZones, mapCenter, mapZoom, basinName, nodeCount }: MapSectionProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
+
+  const totalAtRisk = markers.filter(m => m.status !== "NORMAL").reduce((s, m) => s + m.population, 0);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -80,8 +40,8 @@ export function MapSection() {
     const kenyaBounds: L.LatLngBoundsExpression = [[-5.0, 33.5], [5.5, 42.5]];
 
     const map = L.map(mapRef.current, {
-      center: [-1.5, 40.0],
-      zoom: 7,
+      center: mapCenter,
+      zoom: mapZoom,
       minZoom: 6,
       maxZoom: 10,
       maxBounds: kenyaBounds,
@@ -98,8 +58,7 @@ export function MapSection() {
 
     map.setMaxBounds(kenyaBounds);
 
-    // Flood inundation zones
-    INUNDATION_ZONES.forEach((zone) => {
+    inundationZones.forEach((zone) => {
       const poly = L.polygon(zone.coords, {
         color: zone.color,
         fillColor: zone.color,
@@ -115,8 +74,7 @@ export function MapSection() {
       );
     });
 
-    // Sensor markers
-    MARKERS.forEach((m) => {
+    markers.forEach((m) => {
       const icon = L.divIcon({
         className: "",
         html: `<div class="sensor-marker" style="--mc:${m.color}">
@@ -161,7 +119,6 @@ export function MapSection() {
     return () => { map.remove(); mapInstanceRef.current = null; };
   }, []);
 
-  // Invalidate map size after fullscreen toggle — needs a beat for CSS to settle
   useEffect(() => {
     const id = setTimeout(() => {
       mapInstanceRef.current?.invalidateSize({ pan: false });
@@ -181,7 +138,7 @@ export function MapSection() {
         <div>
           <h3 className="text-lg font-semibold text-slate-200">Basin Overview — Sensor Network</h3>
           <p className="text-sm font-mono text-slate-500 mt-0.5">
-            Tana River Basin, Kenya · 5 nodes · Click markers for readings
+            {basinName}, Kenya · {nodeCount} nodes · Click markers for readings
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -202,7 +159,6 @@ export function MapSection() {
         </div>
       </div>
 
-      {/* Map container — flex-1 + min-h-0 lets it fill remaining space in fullscreen */}
       <div
         ref={mapRef}
         className="w-full rounded-xl overflow-hidden border border-slate-700/50 flex-1 min-h-0"

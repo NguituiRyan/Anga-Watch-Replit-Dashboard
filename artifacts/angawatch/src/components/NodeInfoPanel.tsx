@@ -7,30 +7,6 @@ interface NodeInfoPanelProps {
   onClose: () => void;
 }
 
-const MESH_NODE_IDS: Record<string, string> = {
-  "n-garissa": "A-01",
-  "n-hola": "A-03",
-  "n-garsen": "A-04",
-};
-
-const BATTERY: Record<string, number> = {
-  "n-garissa": 91,
-  "n-hola": 78,
-  "n-garsen": 87,
-};
-
-const SIGNAL: Record<string, number> = {
-  "n-garissa": 4,
-  "n-hola": 3,
-  "n-garsen": 3,
-};
-
-const LAST_PING: Record<string, string> = {
-  "n-garissa": "12s ago",
-  "n-hola": "8s ago",
-  "n-garsen": "22s ago",
-};
-
 const specs = [
   { icon: <Cpu className="w-4 h-4 text-slate-400" />, label: "MCU", value: "Arduino Mega 2560" },
   { icon: <Droplets className="w-4 h-4 text-slate-400" />, label: "Sensor", value: "HC-SR04 Ultrasonic (waterproof)" },
@@ -41,23 +17,16 @@ const specs = [
 ];
 
 export function NodeInfoPanel({ node, onClose }: NodeInfoPanelProps) {
-  const meshId = MESH_NODE_IDS[node.id] ?? "—";
-  const battery = BATTERY[node.id] ?? 80;
-  const signal = SIGNAL[node.id] ?? 3;
-  const lastPing = LAST_PING[node.id] ?? "—";
-  const batteryColor = battery > 70 ? "text-emerald-400" : battery > 40 ? "text-amber-400" : "text-red-400";
+  const batteryColor = node.battery > 70 ? "text-emerald-400" : node.battery > 40 ? "text-amber-400" : "text-red-400";
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-[8000] bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Panel */}
       <div className="fixed right-0 top-0 bottom-0 z-[8001] w-full max-w-[440px] bg-slate-950 border-l border-white/10 overflow-y-auto shadow-2xl animate-in slide-in-from-right duration-300">
-        {/* Header */}
         <div className="sticky top-0 bg-slate-950/95 backdrop-blur-sm border-b border-white/10 px-6 py-4 flex items-center justify-between z-10">
           <div>
             <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Hardware Details</p>
@@ -72,7 +41,6 @@ export function NodeInfoPanel({ node, onClose }: NodeInfoPanelProps) {
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Hardware photo */}
           <div className="rounded-2xl overflow-hidden border border-white/10 bg-slate-900">
             <img
               src={protoImg}
@@ -85,11 +53,10 @@ export function NodeInfoPanel({ node, onClose }: NodeInfoPanelProps) {
             </div>
           </div>
 
-          {/* Node identity */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4">
               <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-1">Mesh ID</p>
-              <p className="text-lg font-bold font-mono text-slate-100">{meshId}</p>
+              <p className="text-lg font-bold font-mono text-slate-100">{node.meshId}</p>
             </div>
             <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4">
               <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-1">Uptime</p>
@@ -97,15 +64,14 @@ export function NodeInfoPanel({ node, onClose }: NodeInfoPanelProps) {
             </div>
             <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4">
               <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-1">Battery</p>
-              <p className={`text-lg font-bold font-mono ${batteryColor}`}>{battery}%</p>
+              <p className={`text-lg font-bold font-mono ${batteryColor}`}>{node.battery}%</p>
             </div>
             <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4">
               <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-1">Last Ping</p>
-              <p className="text-lg font-bold font-mono text-slate-200">{lastPing}</p>
+              <p className="text-lg font-bold font-mono text-slate-200">{node.lastPing}</p>
             </div>
           </div>
 
-          {/* GPS & install */}
           <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2.5">
               <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -131,7 +97,7 @@ export function NodeInfoPanel({ node, onClose }: NodeInfoPanelProps) {
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className={`w-2 rounded-sm ${i < signal ? "bg-emerald-400" : "bg-slate-700"}`}
+                      className={`w-2 rounded-sm ${i < node.signal ? "bg-emerald-400" : "bg-slate-700"}`}
                       style={{ height: `${((i + 1) / 4) * 100}%` }}
                     />
                   ))}
@@ -140,7 +106,6 @@ export function NodeInfoPanel({ node, onClose }: NodeInfoPanelProps) {
             </div>
           </div>
 
-          {/* Hardware specs */}
           <div>
             <h3 className="text-xs font-mono text-slate-500 uppercase tracking-widest border-b border-slate-700 pb-2 mb-3">
               Hardware Specifications
@@ -158,7 +123,6 @@ export function NodeInfoPanel({ node, onClose }: NodeInfoPanelProps) {
             </div>
           </div>
 
-          {/* SLA */}
           <div className="bg-emerald-950/30 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-4">
             <ShieldCheck className="w-8 h-8 text-emerald-400 shrink-0" />
             <div>
