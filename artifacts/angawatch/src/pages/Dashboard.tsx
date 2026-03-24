@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import { useDashboardData } from "@/hooks/use-mock-data";
 import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
@@ -35,9 +35,12 @@ export function Dashboard() {
   const [alertLog, setAlertLog] = useState<string[]>([]);
   const mainRef = useRef<HTMLElement>(null);
 
-  // Scroll to top whenever the active node changes
-  useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  useLayoutEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
   }, [activeNodeId]);
 
   const handleAlertTriggered = useCallback(() => {
@@ -53,7 +56,6 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col text-foreground overflow-hidden relative">
-      {/* Red flash overlay */}
       <div
         className={cn(
           "fixed inset-0 bg-red-500/20 pointer-events-none z-[9998] transition-opacity duration-300",
@@ -64,13 +66,9 @@ export function Dashboard() {
       <TopNav />
 
       <div className="flex-1 flex overflow-hidden">
-        <Sidebar
-          nodes={nodes}
-          activeNodeId={activeNodeId}
-          onSelectNode={setActiveNodeId}
-        />
+        <Sidebar nodes={nodes} activeNodeId={activeNodeId} onSelectNode={setActiveNodeId} />
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-900/40 relative">
+        <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-900/40 relative scroll-smooth">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-900/10 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[120px] pointer-events-none" />
 
@@ -78,9 +76,7 @@ export function Dashboard() {
             <header className="mb-8 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-3xl font-bold tracking-tight text-slate-100">Command Center</h2>
-                <p className="text-slate-400 mt-1">
-                  Real-time hydrological monitoring and early warning system.
-                </p>
+                <p className="text-slate-400 mt-1">Real-time hydrological monitoring and early warning system.</p>
               </div>
               <div className="mt-1 shrink-0">
                 <WalkthroughTour />
@@ -92,11 +88,7 @@ export function Dashboard() {
               <PredictiveChart node={activeNode} />
               <MapSection />
               <MeshPanel />
-              <SmsSimulator
-                onAlertTriggered={handleAlertTriggered}
-                alertLog={alertLog}
-                activeNode={activeNode}
-              />
+              <SmsSimulator onAlertTriggered={handleAlertTriggered} alertLog={alertLog} activeNode={activeNode} />
             </div>
 
             <footer className="mt-12 py-6 border-t border-white/5 text-center text-xs font-mono text-slate-600">
