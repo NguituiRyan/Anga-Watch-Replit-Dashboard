@@ -6,44 +6,85 @@ interface ChatEntry {
   text: string;
 }
 
-const RESPONSES: { keywords: string[]; reply: string }[] = [
+interface PresetQuery {
+  label: string;
+  lang: "en" | "sw";
+  text: string;
+  reply: string;
+}
+
+const PRESETS: PresetQuery[] = [
   {
-    keywords: ["hali", "status", "sasa"],
+    label: "River status?",
+    lang: "en",
+    text: "What is the current river status?",
     reply:
-      "Mto Tana: Kina 2.45m | Kasi JUU (2.8 m/s) | Hatari: WASTANI. Kaa macho na ujiandae kuhama.",
+      "ALERT: Tana River at Hola Bridge — Depth 2.45m | Velocity 2.8 m/s (RISING). River is at 58% of critical capacity. Evacuation advisory in effect for low-lying areas.",
   },
   {
-    keywords: ["safe", "salama", "hatari"],
+    label: "Hali ya mto?",
+    lang: "sw",
+    text: "Hali ya mto sasa hivi ni nini?",
     reply:
-      "CAUTION: River at 58% capacity. Evacuation order likely within 48hrs. Monitor alerts closely.",
+      "TAHADHARI: Mto Tana — Kina 2.45m | Kasi 2.8 m/s (INAZIDI). Mto uko asilimia 58 ya kiwango cha hatari. Watu wa maeneo ya chini waalike kuhama haraka.",
   },
   {
-    keywords: ["help", "msaada", "flood", "mafuriko"],
+    label: "Is it safe?",
+    lang: "en",
+    text: "Is it safe to stay near the river?",
     reply:
-      "Piga simu 0800-FLOOD (Free). Kituo cha karibu: Upper Hill Evacuation Centre. Maelekezo: sogea juu ya mita 10.",
+      "NO — It is NOT safe. Evacuation order likely within 48hrs. Move to higher ground immediately. Nearest evacuation centre: Upper Hill Community Centre (3.2km north).",
   },
   {
-    keywords: ["depth", "kina", "height"],
+    label: "Je, ni salama?",
+    lang: "sw",
+    text: "Je, ni salama kukaa karibu na mto?",
     reply:
-      "Current water depth at Hola Bridge: 2.45m. Critical threshold: 3.0m. Margin: 0.55m and falling.",
+      "HAPANA — Si salama. Amri ya kuhama inatarajiwa ndani ya masaa 48. Hamia sehemu ya juu mara moja. Kituo cha karibu: Upper Hill (kilomita 3.2 kaskazini).",
   },
   {
-    keywords: ["velocity", "kasi", "speed", "flow"],
+    label: "Flood ETA?",
+    lang: "en",
+    text: "When will the flood peak arrive?",
     reply:
-      "Flow velocity: 2.8 m/s — 47% above seasonal baseline. Trend: RISING. AI predicts 4.1 m/s by Day+4.",
+      "AI FORECAST: Peak discharge predicted at ~2,820 m³/s by Day +4 (28 Mar). This will exceed the Critical Evacuation Threshold of 1,500 m³/s. Confidence level: 87%.",
+  },
+  {
+    label: "Mafuriko lini?",
+    lang: "sw",
+    text: "Mafuriko yatafika lini?",
+    reply:
+      "UTABIRI WA AI: Kilele cha mafuriko kinatarajiwa tarehe 28 Mar (Siku +4) — mtiririko wa 2,820 m³/s. Hii itazidi kiwango cha hatari cha 1,500 m³/s. Uhakika: 87%.",
+  },
+  {
+    label: "Help / SOS",
+    lang: "en",
+    text: "HELP — I need emergency assistance!",
+    reply:
+      "EMERGENCY RECEIVED. Broadcasting your location. Call FREE: 0800-FLOOD. Kenya Red Cross: +254 20 395 0000. Nearest shelter: Upper Hill Evacuation Centre. Stay on high ground.",
+  },
+  {
+    label: "Msaada / SOS",
+    lang: "sw",
+    text: "MSAADA — Nahitaji msaada wa dharura!",
+    reply:
+      "DHARURA IMEPOKELEWA. Tunaweza eneo lako. Piga simu BURE: 0800-FLOOD. Red Cross Kenya: +254 20 395 0000. Kituo cha karibu: Upper Hill. Kaa mahali pa juu.",
+  },
+  {
+    label: "Water depth?",
+    lang: "en",
+    text: "What is the current water depth?",
+    reply:
+      "Hola Bridge — Current depth: 2.45m | Critical threshold: 3.00m | Safety margin: 0.55m and FALLING. Rate of rise: +0.18m per 6hrs. Estimated time to critical: ~18 hours.",
+  },
+  {
+    label: "Kina cha mto?",
+    lang: "sw",
+    text: "Kina cha mto ni kiasi gani sasa?",
+    reply:
+      "Daraja la Hola — Kina sasa: 2.45m | Kiwango cha hatari: 3.00m | Pembejeo ya usalama: 0.55m na INASHUKA. Muda wa kufikia hatari: masaa ~18.",
   },
 ];
-
-const DEFAULT_REPLY =
-  "Ujumbe wako umepokelewa. Jibu: Hola Bridge iko katika hali ya TAHADHARI. Angalia arifa zinazofuata. / Message received. Hola Bridge is in CAUTION state. Monitor subsequent alerts.";
-
-function getReply(input: string): string {
-  const lower = input.toLowerCase();
-  for (const r of RESPONSES) {
-    if (r.keywords.some((k) => lower.includes(k))) return r.reply;
-  }
-  return DEFAULT_REPLY;
-}
 
 export function SmsSimulator({
   onAlertTriggered,
@@ -52,26 +93,27 @@ export function SmsSimulator({
   onAlertTriggered: () => void;
   alertLog: string[];
 }) {
-  const [inputVal, setInputVal] = useState("");
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [langFilter, setLangFilter] = useState<"all" | "en" | "sw">("all");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, isTyping]);
 
-  function handleSend() {
-    const trimmed = inputVal.trim();
-    if (!trimmed) return;
-    setChat((prev) => [...prev, { role: "user", text: trimmed }]);
-    setInputVal("");
+  function handlePreset(preset: PresetQuery) {
+    if (isTyping) return;
+    setChat((prev) => [...prev, { role: "user", text: preset.text }]);
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
-      setChat((prev) => [...prev, { role: "system", text: getReply(trimmed) }]);
+      setChat((prev) => [...prev, { role: "system", text: preset.reply }]);
     }, 1400);
   }
+
+  const visiblePresets =
+    langFilter === "all" ? PRESETS : PRESETS.filter((p) => p.lang === langFilter);
 
   return (
     <div className="bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 lg:p-8 mb-6">
@@ -130,57 +172,55 @@ export function SmsSimulator({
             </div>
           </div>
 
-          {/* SMS Input */}
-          <div className="mt-4">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={inputVal}
-                onChange={(e) => setInputVal(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Uliza hali ya mto... (Ask about river status)"
-                className="flex-1 text-xs bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 font-mono placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/60"
-              />
-              <button
-                onClick={handleSend}
-                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors"
-              >
-                <Send className="w-3.5 h-3.5" />
-                Send
-              </button>
+          {/* Quick-Reply Buttons */}
+          <div className="mt-5">
+            {/* Language filter tabs */}
+            <div className="flex gap-1.5 mb-3">
+              {(["all", "en", "sw"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setLangFilter(f)}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-mono uppercase tracking-widest font-bold border transition-all ${
+                    langFilter === f
+                      ? "bg-emerald-600 border-emerald-500 text-white"
+                      : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500"
+                  }`}
+                >
+                  {f === "all" ? "All" : f === "en" ? "🇬🇧 EN" : "🇰🇪 SW"}
+                </button>
+              ))}
+              <span className="ml-auto text-[9px] font-mono text-slate-600 self-center">
+                tap to send
+              </span>
             </div>
 
-            {/* Chat bubbles */}
-            {chat.length > 0 && (
-              <div className="mt-3 max-h-48 overflow-y-auto space-y-2 pr-1">
-                {chat.map((entry, i) => (
-                  <div
-                    key={i}
-                    className={`flex ${entry.role === "user" ? "justify-end" : "justify-start"}`}
+            <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-0.5">
+              {visiblePresets.map((p) => (
+                <button
+                  key={p.text}
+                  onClick={() => handlePreset(p)}
+                  disabled={isTyping}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl border transition-all group flex items-start gap-2.5 ${
+                    p.lang === "sw"
+                      ? "bg-slate-900/70 border-slate-700/60 hover:border-emerald-600/50 hover:bg-emerald-950/20"
+                      : "bg-slate-900/70 border-slate-700/60 hover:border-blue-600/50 hover:bg-blue-950/10"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <span
+                    className={`mt-0.5 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                      p.lang === "sw"
+                        ? "bg-emerald-900/50 text-emerald-400 border border-emerald-700/40"
+                        : "bg-blue-900/50 text-blue-400 border border-blue-700/40"
+                    }`}
                   >
-                    <div
-                      className={`rounded-xl px-3 py-2 text-[11px] font-mono max-w-[90%] ${
-                        entry.role === "user"
-                          ? "bg-emerald-700/40 text-emerald-200 border border-emerald-700/30"
-                          : "bg-slate-700/60 text-slate-200 border border-slate-600/30"
-                      }`}
-                    >
-                      {entry.text}
-                    </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-slate-700/60 border border-slate-600/30 rounded-xl px-4 py-2 text-[11px] font-mono text-slate-400 flex gap-1">
-                      <span className="animate-bounce" style={{ animationDelay: "0ms" }}>·</span>
-                      <span className="animate-bounce" style={{ animationDelay: "150ms" }}>·</span>
-                      <span className="animate-bounce" style={{ animationDelay: "300ms" }}>·</span>
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-            )}
+                    {p.lang === "sw" ? "SW" : "EN"}
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-200 leading-tight group-hover:text-white transition-colors">
+                    {p.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -192,12 +232,56 @@ export function SmsSimulator({
           </div>
 
           <h3 className="text-2xl font-bold text-slate-100 mb-3">Community Alert Gateway</h3>
-          <p className="text-slate-400 text-sm leading-relaxed mb-6 max-w-lg">
+          <p className="text-slate-400 text-sm leading-relaxed mb-5 max-w-lg">
             AngaWatch's SMS gateway reaches rural communities with no internet access, delivering
-            life-saving flood warnings directly to basic feature phones via telecom mesh routing.
+            life-saving flood warnings in English and Kiswahili to basic feature phones.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {/* Chat area */}
+          <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-4 mb-5 min-h-[120px] max-h-[280px] overflow-y-auto flex flex-col gap-2">
+            {chat.length === 0 && !isTyping && (
+              <p className="text-xs font-mono text-slate-600 m-auto text-center py-4">
+                Select a quick-reply button on the left to simulate an SMS query →
+              </p>
+            )}
+            {chat.map((entry, i) => (
+              <div
+                key={i}
+                className={`flex ${entry.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`rounded-2xl px-4 py-2.5 text-[12px] font-mono max-w-[85%] leading-relaxed ${
+                    entry.role === "user"
+                      ? "bg-emerald-700/40 text-emerald-100 border border-emerald-700/30 rounded-br-sm"
+                      : "bg-slate-700/60 text-slate-200 border border-slate-600/30 rounded-bl-sm"
+                  }`}
+                >
+                  {entry.role === "system" && (
+                    <span className="block text-[9px] text-emerald-500 font-bold uppercase tracking-widest mb-1">
+                      AngaWatch System
+                    </span>
+                  )}
+                  {entry.text}
+                </div>
+              </div>
+            ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-slate-700/60 border border-slate-600/30 rounded-2xl rounded-bl-sm px-4 py-3 text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
+                  <span className="text-[9px] text-emerald-500 font-bold uppercase tracking-widest mr-1">
+                    AngaWatch
+                  </span>
+                  <span className="animate-bounce" style={{ animationDelay: "0ms" }}>·</span>
+                  <span className="animate-bounce" style={{ animationDelay: "150ms" }}>·</span>
+                  <span className="animate-bounce" style={{ animationDelay: "300ms" }}>·</span>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
             <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
               <Send className="w-5 h-5 text-blue-400 mb-2" />
               <div className="text-2xl font-mono font-bold text-slate-200">2,847</div>
@@ -220,7 +304,7 @@ export function SmsSimulator({
           {/* Manual Alert Button */}
           <button
             onClick={onAlertTriggered}
-            className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold rounded-xl transition-all flex items-center gap-2 mb-6 text-sm"
+            className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold rounded-xl transition-all flex items-center gap-2 mb-5 text-sm"
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-200 opacity-75" />
