@@ -17,7 +17,7 @@ const STEPS: Step[] = [
   {
     icon: <HelpCircle className="w-6 h-6" />,
     title: "Quick walkthrough",
-    description: "I’ll guide you through the dashboard and move the highlight as you go.",
+    description: "I’ll guide you through the dashboard and move the page as you go.",
     tip: "This opens automatically when the site loads.",
     color: "emerald",
     target: "telemetry",
@@ -78,14 +78,6 @@ const dotMap: Record<string, string> = {
   amber: "bg-amber-500",
 };
 
-const frames: Record<StepTarget, string> = {
-  sidebar: "top-[76px] left-[24px] w-[312px] h-[260px]",
-  telemetry: "top-[104px] left-[352px] w-[calc(100vw-400px)] h-[220px]",
-  chart: "top-[332px] left-[352px] w-[calc(100vw-400px)] h-[330px]",
-  map: "top-[760px] left-[352px] w-[calc(100vw-400px)] h-[470px]",
-  sms: "top-[1260px] left-[352px] w-[calc(100vw-400px)] h-[560px]",
-};
-
 const scrollTargets: Partial<Record<StepTarget, number>> = {
   sidebar: 0,
   telemetry: 0,
@@ -114,6 +106,7 @@ export function WalkthroughTour() {
   function close() {
     setOpen(false);
     setStep(0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
@@ -128,84 +121,71 @@ export function WalkthroughTour() {
       </button>
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-[10000] pointer-events-none">
-            {step > 0 && (
-              <div
-                className={cn(
-                  "absolute rounded-2xl border-2 border-emerald-400/90 shadow-[0_0_0_9999px_rgba(2,6,23,0.38),0_0_40px_rgba(16,185,129,0.35)] transition-all duration-500",
-                  frames[indicator]
-                )}
-              />
-            )}
-          </div>
+        <div className="fixed top-24 right-6 z-[10001] w-[360px] max-w-[calc(100vw-1.5rem)]">
+          <div className="bg-slate-950/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
+            <div className={cn("h-1 w-full", dotMap[current.color])} />
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+              <div>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Step {step + 1} of {STEPS.length}</p>
+                <p className="text-sm font-semibold text-slate-100">Need a walkthrough?</p>
+              </div>
+              <button onClick={close} className="text-slate-500 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-          <div className="fixed top-24 right-6 z-[10001] w-[360px] max-w-[calc(100vw-1.5rem)]">
-            <div className="bg-slate-950/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
-              <div className={cn("h-1 w-full", dotMap[current.color])} />
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Step {step + 1} of {STEPS.length}</p>
-                  <p className="text-sm font-semibold text-slate-100">Need a walkthrough?</p>
+            <div className="p-4">
+              <div className="flex items-start gap-3 mb-3">
+                <div className={cn("w-11 h-11 rounded-xl border flex items-center justify-center shrink-0", colorMap[current.color])}>
+                  {current.icon}
                 </div>
-                <button onClick={close} className="text-slate-500 hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
+                <div>
+                  <h3 className="text-base font-bold text-slate-100">{current.title}</h3>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">{current.description}</p>
+                </div>
               </div>
 
-              <div className="p-4">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className={cn("w-11 h-11 rounded-xl border flex items-center justify-center shrink-0", colorMap[current.color])}>
-                    {current.icon}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-100">{current.title}</h3>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">{current.description}</p>
-                  </div>
+              {current.tip && (
+                <div className="bg-slate-800/70 border border-slate-700 rounded-xl px-3 py-2 mb-4">
+                  <p className="text-[11px] text-slate-300 leading-relaxed">{current.tip}</p>
                 </div>
+              )}
 
-                {current.tip && (
-                  <div className="bg-slate-800/70 border border-slate-700 rounded-xl px-3 py-2 mb-4">
-                    <p className="text-[11px] text-slate-300 leading-relaxed">{current.tip}</p>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => setStep((s) => Math.max(0, s - 1))}
-                    disabled={step === 0}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    Back
-                  </button>
-                  <div className="flex gap-1.5">
-                    {STEPS.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setStep(i)}
-                        className={cn("w-2.5 h-2.5 rounded-full", i === step ? dotMap[current.color] : "bg-slate-700")}
-                      />
-                    ))}
-                  </div>
-                  {step < STEPS.length - 1 ? (
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  onClick={() => setStep((s) => Math.max(0, s - 1))}
+                  disabled={step === 0}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </button>
+                <div className="flex gap-1.5">
+                  {STEPS.map((_, i) => (
                     <button
-                      onClick={() => setStep((s) => s + 1)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white font-semibold"
-                    >
-                      Next
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <button onClick={close} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white font-semibold">
-                      Get started
-                    </button>
-                  )}
+                      key={i}
+                      onClick={() => setStep(i)}
+                      className={cn("w-2.5 h-2.5 rounded-full", i === step ? dotMap[current.color] : "bg-slate-700")}
+                    />
+                  ))}
                 </div>
+                {step < STEPS.length - 1 ? (
+                  <button
+                    onClick={() => setStep((s) => s + 1)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white font-semibold"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button onClick={close} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white font-semibold">
+                    Finish
+                  </button>
+                )}
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </>
   );
