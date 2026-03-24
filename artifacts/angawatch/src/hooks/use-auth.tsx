@@ -38,17 +38,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function fetchProfile(userId: string) {
+  async function fetchProfile(userId: string, email?: string) {
     try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single()
+        .abortSignal(controller.signal);
+      clearTimeout(timeout);
       if (error) {
         console.warn("Failed to fetch profile:", error.message);
-        setProfile(null);
+        setProfile({
+          id: userId,
+          email: email ?? "",
+          full_name: null,
+          organization: null,
+          phone: null,
+          role: "viewer",
+          created_at: new Date().toISOString(),
+          last_login: null,
+        });
       } else {
         setProfile(data as Profile);
       }
     } catch {
-      setProfile(null);
+      setProfile({
+        id: userId,
+        email: email ?? "",
+        full_name: null,
+        organization: null,
+        phone: null,
+        role: "viewer",
+        created_at: new Date().toISOString(),
+        last_login: null,
+      });
     }
   }
 
@@ -60,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        await fetchProfile(session.user.id, session.user.email);
       }
       if (mounted) setLoading(false);
     }
@@ -73,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        await fetchProfile(session.user.id, session.user.email);
       } else {
         setProfile(null);
       }
