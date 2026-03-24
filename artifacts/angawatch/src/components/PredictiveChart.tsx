@@ -52,7 +52,7 @@ export function PredictiveChart({ node }: PredictiveChartProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
           <h3 className="text-lg font-semibold text-slate-200">
-            14-Day Predictive Discharge Model
+            Predictive Discharge Model
           </h3>
           <p className="text-sm font-mono text-slate-500 mt-1">
             {node.name} — Tana River Basin

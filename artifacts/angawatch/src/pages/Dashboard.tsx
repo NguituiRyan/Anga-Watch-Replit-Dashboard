@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useDashboardData } from "@/hooks/use-mock-data";
 import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
@@ -7,6 +7,7 @@ import { PredictiveChart } from "@/components/PredictiveChart";
 import { SmsSimulator } from "@/components/SmsSimulator";
 import { MapSection } from "@/components/MapSection";
 import { MeshPanel } from "@/components/MeshPanel";
+import { WalkthroughTour } from "@/components/WalkthroughTour";
 import { CheckCircle2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,19 +33,21 @@ export function Dashboard() {
   const [flashOverlay, setFlashOverlay] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [alertLog, setAlertLog] = useState<string[]>([]);
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Scroll to top whenever the active node changes
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [activeNodeId]);
 
   const handleAlertTriggered = useCallback(() => {
-    // Red flash
     setFlashOverlay(true);
     setTimeout(() => setFlashOverlay(false), 600);
 
-    // Log entry
     const now = new Date();
     const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
     const entry = `[${hhmm}] Manual alert dispatched — 12,847 recipients notified`;
     setAlertLog((prev) => [entry, ...prev]);
-
-    // Toast
     setToast("✓ Alert sent in 3.2 seconds");
   }, []);
 
@@ -67,22 +70,24 @@ export function Dashboard() {
           onSelectNode={setActiveNodeId}
         />
 
-        <main className="flex-1 overflow-y-auto bg-slate-900/40 relative">
+        <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-900/40 relative">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-900/10 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="p-6 md:p-8 max-w-7xl mx-auto">
-            <header className="mb-8">
-              <h2 className="text-3xl font-bold tracking-tight text-slate-100">Command Center</h2>
-              <p className="text-slate-400 mt-1">
-                Real-time hydrological monitoring and early warning system.
-              </p>
+            <header className="mb-8 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-bold tracking-tight text-slate-100">Command Center</h2>
+                <p className="text-slate-400 mt-1">
+                  Real-time hydrological monitoring and early warning system.
+                </p>
+              </div>
+              <div className="mt-1 shrink-0">
+                <WalkthroughTour />
+              </div>
             </header>
 
-            <div
-              className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both"
-              key={activeNode.id}
-            >
+            <div className="animate-in fade-in duration-500 ease-out fill-mode-both">
               <TelemetryCards node={activeNode} />
               <PredictiveChart node={activeNode} />
               <MapSection />
@@ -90,6 +95,7 @@ export function Dashboard() {
               <SmsSimulator
                 onAlertTriggered={handleAlertTriggered}
                 alertLog={alertLog}
+                activeNode={activeNode}
               />
             </div>
 
