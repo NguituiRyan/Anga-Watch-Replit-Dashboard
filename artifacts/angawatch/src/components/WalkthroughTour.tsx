@@ -80,10 +80,10 @@ const dotMap: Record<string, string> = {
 
 const sectionIds: Partial<Record<StepTarget, string>> = {
   telemetry: "section-telemetry",
-  chart:     "section-chart",
-  map:       "section-map",
-  mesh:      "section-mesh",
-  sms:       "section-sms",
+  chart: "section-chart",
+  map: "section-map",
+  mesh: "section-mesh",
+  sms: "section-sms",
 };
 
 function scrollToSection(target: StepTarget) {
