@@ -61,7 +61,10 @@ export function Register() {
       setSuccess(true);
       setTimeout(() => navigate("/"), 1500);
     } catch (err: any) {
-      setError(err.message ?? "Registration failed");
+      const msg = err?.message ?? "Registration failed";
+      const code = err?.code ?? err?.status ?? "";
+      setError(code ? `${msg} (${code})` : msg);
+      console.error("Signup error:", err);
     } finally {
       setSubmitting(false);
     }
