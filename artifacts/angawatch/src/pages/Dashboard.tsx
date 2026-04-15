@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDashboardData, type BasinConfig } from "@/hooks/use-mock-data";
-import { useAuth } from "@/hooks/use-auth";
 import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
 import { TelemetryCards } from "@/components/TelemetryCards";
@@ -83,7 +82,6 @@ function BasinTabs({
 
 export function Dashboard() {
   const { basins, activeBasinId, setActiveBasinId, activeBasin, nodes, activeNodeId, setActiveNodeId, activeNode } = useDashboardData();
-  const { isAdmin } = useAuth();
   const [flashOverlay, setFlashOverlay] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [alertLog, setAlertLog] = useState<string[]>([]);
@@ -169,7 +167,7 @@ export function Dashboard() {
                 <MeshPanel meshNodes={activeBasin.meshNodes} basinName={activeBasin.name} />
               </div>
               <div id="section-sms">
-                <SmsSimulator onAlertTriggered={handleAlertTriggered} alertLog={alertLog} activeNode={activeNode} basinName={activeBasin.river} isAdmin={isAdmin} />
+                <SmsSimulator onAlertTriggered={handleAlertTriggered} alertLog={alertLog} activeNode={activeNode} basinName={activeBasin.river} isAdmin={true} />
               </div>
             </div>
 
